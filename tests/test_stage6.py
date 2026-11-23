@@ -110,7 +110,7 @@ def _repo(tmp_path: Path) -> Path:
 class TwoFileReviewer(FakeReviewer):
     """מוצא את הבאג האמיתי ב-app.py, וגם "באג" שגוי ב-other.py שהתיקון שלו שובר טסט."""
 
-    def find_suspects(self, file, source):
+    def find_suspects(self, file, source, context=""):
         if file == "other.py":
             return [{"file": file, "line": 2, "bug_type": "logic", "reason": "should add", "confidence": 4}]
         return super().find_suspects(file, source)
@@ -235,3 +235,43 @@ def test_langsmith_replay_uses_saved_results_without_running(tmp_path, monkeypat
     monkeypatch.setitem(sys.modules, "langsmith", types.SimpleNamespace(Client=Client, evaluate=evaluate))
     run_eval.run_langsmith("before", "test", str(saved))
     assert calls == {"data": ["thefuck_1"], "out": {"suspects": []}}
+
+
+# ------------------------------------------------------- ממצאים 1, 4, 5
+
+
+def test_repo_context_brings_signatures_of_repo_imports_only(tmp_path):
+    from core.repo_context import build_context
+
+    (tmp_path / "pkg" / "rules").mkdir(parents=True)
+    (tmp_path / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "pkg" / "utils.py").write_text(
+        'def which(program):\n    """Returns path or None."""\n    return None\n\n\nclass Command:\n'
+        '    script = ""\n\n    def split(self):\n        return []\n',
+        encoding="utf-8",
+    )
+    src = "import re\nfrom ..utils import which, Command\nfrom os import path\n\n\ndef match(c):\n    return which(c)\n"
+    ctx = build_context(tmp_path, "pkg/rules/r.py", src)
+    assert "# from pkg/utils.py" in ctx and "def which(program):" in ctx and "Returns path or None." in ctx
+    assert "class Command:" in ctx and "def split(self):" in ctx
+    assert "return None" not in ctx and "os" not in ctx  # בלי גוף, ובלי ספריות חיצוניות
+
+
+def test_suspect_reason_comes_before_line():
+    from core.llm import _SuspectOut
+
+    assert list(_SuspectOut.model_fields)[:3] == ["reason", "bug_type", "line"]
+
+
+def test_funnel_says_where_the_real_bug_was_lost():
+    from eval.metrics import lost_at
+
+    bug = {"id": "b", "file": "a.py", "line": 10, "failing_test": "tests/test_a.py::t"}
+    base = {"verification": "tests", "failing_tests": ["tests/test_a.py::t"], "fixes": [{"file": "a.py"}]}
+    assert lost_at({**base, "raw_suspects": [], "suspects": []}, bug) == "not_suspected"
+    rej = {"file": "a.py", "line": 11, "rejected_at": "checker"}
+    assert lost_at({**base, "raw_suspects": [rej], "suspects": [], "rejected_suspects": [rej]}, bug) == "checker"
+    kept = {"file": "a.py", "line": 10}
+    assert lost_at({**base, "raw_suspects": [kept], "suspects": [kept], "failed_after": []}, bug) == "fixed"
+    assert lost_at({**base, "raw_suspects": [kept], "suspects": [kept],
+                    "failed_after": ["tests/test_a.py::t"]}, bug) == "not_fixed"  # fmt: skip

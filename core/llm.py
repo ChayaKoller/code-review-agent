@@ -37,9 +37,11 @@ BugType = Literal["off_by_one", "none_handling", "logic"]
 
 
 class _SuspectOut(BaseModel):
-    line: int = Field(description="line number of the bug, as shown at the start of the line")
+    # הסדר חשוב (ממצא 4): המודל כותב את השדות לפי הסדר. קודם הנימוק, ורק אחריו מספר השורה,
+    # כדי שהשורה תיבחר אחרי שהמודל ניסח מה לא בסדר, ולא לפני.
+    reason: str = Field(description="one short sentence: why this code is wrong, for which input")
     bug_type: BugType
-    reason: str = Field(description="one short sentence: why this line is wrong")
+    line: int = Field(description="line number of the bug, as shown at the start of the line")
     confidence: int = Field(
         description="1-5: 5 = certain this line gives a wrong result for a normal input, "
         "1 = only a defensive check for a case that may never happen"
@@ -73,7 +75,7 @@ Each line starts with its line number and a colon.
 Report only real bugs of these kinds: off-by-one, missing None / missing value handling, wrong logic.
 Do not report style, naming, performance, security or missing features.
 If the file has no such bug, return an empty list.
-
+{context}
 File: {file}
 {numbered}"""
 
@@ -83,6 +85,7 @@ and what the code actually does. Trace the code line by line for that input.
 If you cannot find such an input, return is_bug=false and leave failing_input empty.
 A missing check for a value that the callers never pass is not a bug.
 
+{context}
 File: {file} (only the relevant part; line numbers are from the full file)
 {numbered}
 
@@ -156,8 +159,10 @@ class Reviewer:
             raise ValueError(f"המודל החזיר פלט שלא תואם למבנה: {out['parsing_error']}")
         return out.get("parsed")
 
-    def find_suspects(self, file: str, source: str) -> list[Suspect]:
-        out = self._invoke(self._find, _FIND_PROMPT.format(file=file, numbered=number_lines(source)))
+    def find_suspects(self, file: str, source: str, context: str = "") -> list[Suspect]:
+        """context: חתימות של מה שהקובץ מייבא מהריפו (core/repo_context.py). ריק = בלי הקשר."""
+        prompt = _FIND_PROMPT.format(file=file, numbered=number_lines(source), context=_context_block(context))
+        out = self._invoke(self._find, prompt)
         total = len(source.splitlines())
         result: list[Suspect] = []
         for s in out.suspects if out else []:
@@ -166,11 +171,12 @@ class Reviewer:
                                "confidence": max(1, min(5, s.confidence))})  # fmt: skip
         return result
 
-    def check_suspect(self, source: str, suspect: Suspect) -> dict:
+    def check_suspect(self, source: str, suspect: Suspect, context: str = "") -> dict:
         """המאמת. מחזיר {"is_bug", "failing_input", "expected", "actual"}.
         חשד נחשב מאומת רק אם is_bug וגם יש קלט מפיל (לא ריק)."""
         prompt = _CHECK_PROMPT.format(
             file=suspect["file"], numbered=excerpt(source, [suspect["line"]]), line=suspect["line"],
+            context=_context_block(context),
             bug_type=suspect["bug_type"], reason=suspect["reason"],
         )  # fmt: skip
         out = self._invoke(self._check, prompt)
@@ -212,3 +218,12 @@ def _describe(s: Suspect) -> str:
     if s.get("failing_input"):  # מה שהמאמת מצא עוזר לתקן: קלט, צפוי, בפועל
         text += f"\n  failing input: {s['failing_input']} | expected: {s.get('expected', '')} | actual: {s.get('actual', '')}"
     return text
+
+
+def _context_block(context: str) -> str:
+    if not context:
+        return ""
+    return (
+        "\nDefinitions this file imports from the same repository (signatures only, for reference;"
+        " do not review them):\n" + context + "\n"
+    )

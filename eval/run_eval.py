@@ -158,10 +158,16 @@ def run_local(items: list[dict], name: str, dataset: str = "dev", resume: bool =
             f"  recall {_fmt(metrics['recall'])} (מדויק {_fmt(metrics['recall_exact'])}) | "
             f"precision {_fmt(metrics['precision'])} (מדויק {_fmt(metrics['precision_exact'])}) | "
             f"תיקון {_fmt(metrics['fix_rate'])} | חשדות {metrics['raw_suspects']}->{metrics['suspects']} "
-            f"(precision לפני סינון {_fmt(metrics['raw_precision'])}) | {result['seconds']}s | "
+            f"(precision לפני סינון {_fmt(metrics['raw_precision'])}) | "
+            f"נעצר ב: {', '.join(metrics['lost_at'].values())} | {result['seconds']}s | "
             f"{result['input_tokens']}+{result['output_tokens']} טוקנים"
         )
     if rows:
+        funnel: dict[str, int] = {}
+        for r in rows:
+            for stage in (r["metrics"].get("lost_at") or {}).values():
+                funnel[stage] = funnel.get(stage, 0) + 1
+        print("משפך (איפה כל באג אמיתי נעצר):", ", ".join(f"{k} {v}" for k, v in sorted(funnel.items())))
         print(
             f"ממוצע על {len(rows)} פריטים: recall {_fmt(_mean(rows, 'recall'))} | "
             f"precision {_fmt(_mean(rows, 'precision'))} | תיקון {_fmt(_mean(rows, 'fix_rate'))} | "

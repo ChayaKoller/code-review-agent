@@ -1,0 +1,531 @@
+[
+  {
+    "id": "thefuck_2",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 3,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 0,
+      "recall": 0.0,
+      "precision": null,
+      "recall_exact": 0.0,
+      "precision_exact": null,
+      "false_positives": 0,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0,
+      "lost_at": {
+        "thefuck_2": "not_suspected"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/conf.py",
+          "line": 93,
+          "bug_type": "none_handling",
+          "reason": "The code accesses os.environ[env] without checking if the key exists, although the loop condition checks for it, the function _val_from_env is called directly in other contexts or could be unsafe if refactored.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 99,
+          "bug_type": "none_handling",
+          "reason": "The function returns None if the loop finishes without finding a match, but the caller expects a return value, potentially causing an IndexError if the result is indexed.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 213,
+          "bug_type": "logic",
+          "reason": "The code attempts to concatenate a tuple of exceptions with a single exception class, which will raise a TypeError if shelve_open_error is not a tuple.",
+          "confidence": 5
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/conf.py",
+          "line": 93,
+          "bug_type": "none_handling",
+          "reason": "The code accesses os.environ[env] without checking if the key exists, although the loop condition checks for it, the function _val_from_env is called directly in other contexts or could be unsafe if refactored.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך",
+          "rejected_at": "low_confidence"
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 213,
+          "bug_type": "logic",
+          "reason": "The code attempts to concatenate a tuple of exceptions with a single exception class, which will raise a TypeError if shelve_open_error is not a tuple.",
+          "confidence": 5,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 99,
+          "bug_type": "none_handling",
+          "reason": "The function returns None if the loop finishes without finding a match, but the caller expects a return value, potentially causing an IndexError if the result is indexed.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/utils.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        }
+      ],
+      "suspects": [],
+      "fixes": [],
+      "verification": null,
+      "verify_ok": null,
+      "failing_tests": [
+        "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+        "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+        "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+        "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+        "tests/test_conf.py::test_settings_defaults",
+        "tests/test_conf.py::test_settings_from_args",
+        "tests/test_utils.py::TestCache::test_when_etag_changed",
+        "tests/test_utils.py::TestCache::test_with_blank_cache",
+        "tests/test_utils.py::TestCache::test_with_filled_cache",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le",
+        "tests/test_utils.py::test_get_all_executables_pathsep[C:\\\\\\\\foo;C:\\\\\\\\bar;C:\\\\\\\\baz;C:\\\\\\\\foo\\\\\\\\bar-;]"
+      ],
+      "failed_after": null,
+      "new_failures": null,
+      "skipped": {},
+      "result": "נמצאו חשדות, אבל אף תיקון לא עבר את הבדיקה (או שלא הוצע תיקון).",
+      "seconds": 99.0,
+      "llm_calls": 8,
+      "input_tokens": 12145,
+      "output_tokens": 3993
+    }
+  },
+  {
+    "id": "thefuck_12",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 6,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 2,
+      "recall": 0.0,
+      "precision": 0.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 2,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0,
+      "lost_at": {
+        "thefuck_12": "not_suspected"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script_parts[0] exists without checking if script_parts is empty, which could cause an IndexError.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "The code fails to handle cases where the path does not contain a slash, resulting in an empty directory string.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 29,
+          "bug_type": "logic",
+          "reason": "The _get_available_commands function fails to parse npm command lists that are indented or formatted differently than the expected split logic.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 28,
+          "bug_type": "none_handling",
+          "reason": "The code accesses command.stderr without checking if it is None, which will raise an AttributeError if the command output is empty.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 34,
+          "bug_type": "none_handling",
+          "reason": "The code accesses command.stderr without checking if it is None, which will raise an AttributeError if the command output is empty.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "logic",
+          "reason": "The code assumes command.script contains a space when splitting, which will raise an IndexError if the command is just 'open'.",
+          "confidence": 3
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script_parts[0] exists without checking if script_parts is empty, which could cause an IndexError.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 28,
+          "bug_type": "none_handling",
+          "reason": "The code accesses command.stderr without checking if it is None, which will raise an AttributeError if the command output is empty.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 34,
+          "bug_type": "none_handling",
+          "reason": "The code accesses command.stderr without checking if it is None, which will raise an AttributeError if the command output is empty.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "logic",
+          "reason": "The code assumes command.script contains a space when splitting, which will raise an IndexError if the command is just 'open'.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "The code fails to handle cases where the path does not contain a slash, resulting in an empty directory string.",
+          "confidence": 4,
+          "failing_input": "Command(script='cat file.txt', stderr='cat: file.txt: No such file or directory')",
+          "expected": "None or a command that does not attempt to create a truncated directory like 'file.tx'",
+          "actual": "'mkdir -p file.tx && cat file.txt'",
+          "evidence": "unproven"
+        },
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 29,
+          "bug_type": "logic",
+          "reason": "The _get_available_commands function fails to parse npm command lists that are indented or formatted differently than the expected split logic.",
+          "confidence": 3,
+          "failing_input": "_get_available_commands('where <command> is one of:\\n    access, adduser, audit,\\n    clean, config')",
+          "expected": "['access', 'adduser', 'audit', 'clean', 'config']",
+          "actual": "['access', 'adduser', 'audit,', 'clean', 'config']",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 27,
+          "end_line": 30,
+          "new_code": "            dir = file[:file.rfind('/')]\n            if not dir:\n                return command.script\n\n            formatme = shell.and_('mkdir -p {}', '{}')\n            return formatme.format(dir, command.script)",
+          "explanation": "Check if the directory path is empty before attempting to create it to avoid incorrect mkdir commands."
+        },
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "start_line": 29,
+          "end_line": 29,
+          "new_code": "            for command in line.replace(',', ' ').split():",
+          "explanation": "Split the line by whitespace after replacing commas to correctly handle indented or multi-column npm command lists."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "failed_after": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 282.5,
+      "llm_calls": 15,
+      "input_tokens": 8028,
+      "output_tokens": 12919
+    }
+  },
+  {
+    "id": "thefuck_32",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 4,
+      "raw_recall": 1.0,
+      "raw_precision": 0.25,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 1.0,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "thefuck_32"
+      ],
+      "fixed": [
+        "thefuck_32"
+      ],
+      "fix_rate": 1.0,
+      "lost_at": {
+        "thefuck_32": "fixed"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 2,
+          "bug_type": "logic",
+          "reason": "The logic fails to account for cases where 'ls' is part of a longer command name or path, leading to incorrect replacement.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The command splitting logic incorrectly replaces the first element even if it was not exactly 'ls', potentially corrupting commands like 'my_ls'.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 12,
+          "bug_type": "logic",
+          "reason": "The logic in get_new_command is arbitrary and does not correctly handle the man command structure, and the join operation will result in a malformed command string.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 7,
+          "bug_type": "off_by_one",
+          "reason": "The code assumes command.script starts with 'man' and has a length of at least 3, which will cause an IndexError if the script is exactly 'man'.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 7,
+          "bug_type": "off_by_one",
+          "reason": "The code assumes command.script starts with 'man' and has a length of at least 3, which will cause an IndexError if the script is exactly 'man'.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The command splitting logic incorrectly replaces the first element even if it was not exactly 'ls', potentially corrupting commands like 'my_ls'.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 12,
+          "bug_type": "logic",
+          "reason": "The logic in get_new_command is arbitrary and does not correctly handle the man command structure, and the join operation will result in a malformed command string.",
+          "confidence": 5,
+          "failing_input": "get_new_command(Command('man read write', ''), None)",
+          "expected": "\"man 3 read write\"",
+          "actual": "\"man 3 readwrite\"",
+          "rejected_at": "screening",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/man.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/rules/test_ls_lah.py::test_match"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 2,
+          "bug_type": "logic",
+          "reason": "The logic fails to account for cases where 'ls' is part of a longer command name or path, leading to incorrect replacement.",
+          "confidence": 3,
+          "failing_input": "Command(script='echo ls', output='')",
+          "expected": "False",
+          "actual": "True",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "start_line": 2,
+          "end_line": 2,
+          "new_code": "    return command.script.split() and command.script.split()[0] == 'ls' and '-l' not in command.script",
+          "explanation": "Ensure the command starts with 'ls' and check for '-l' instead of just 'ls -' to correctly identify ls commands."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "failed_after": [
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 97.1,
+      "llm_calls": 11,
+      "input_tokens": 2514,
+      "output_tokens": 6865
+    }
+  }
+]

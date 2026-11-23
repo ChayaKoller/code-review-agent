@@ -23,6 +23,7 @@ from langgraph.types import interrupt
 from core import config, git_ops, publish
 from core.docker_runner import DockerRunner, TestRun
 from core.filtering import dedupe, rank, split_by_confidence
+from core.repo_context import build_context
 from core.llm import Reviewer
 from core.sandbox import Sandbox, remove_sandbox
 from core.selection import select_files
@@ -135,8 +136,9 @@ def select(state: ReviewState, deps: Deps) -> dict:
     return {"files": sel.selected, "skipped": sel.skipped}
 
 
-def _rejected(items: list[dict], why: str) -> list[dict]:
-    return [{**s, "rejected_because": why} for s in items]
+def _rejected(items: list[dict], why: str, stage: str) -> list[dict]:
+    """why: הסבר למשתמשת. stage: קוד קבוע לשלב שבו החשד נזרק, למשפך ההערכה (eval/metrics.py)."""
+    return [{**s, "rejected_because": why, "rejected_at": stage} for s in items]
 
 
 def find_suspects(state: ReviewState, deps: Deps) -> dict:
@@ -147,25 +149,28 @@ def find_suspects(state: ReviewState, deps: Deps) -> dict:
     חשדות שהמאמת זרק (בביטחון מעל הסף) נשמרים גם ב-doubtful_suspects: אם יש טסטים, הם מקבלים
     הזדמנות ב-screen_fixes, ונשארים רק אם הטסטים מאשרים (s6try2: המאמת זרק את הבאג של thefuck_25)."""
     raw = []
+    contexts = {}
     for rel in state["files"]:
-        raw.extend(deps.reviewer.find_suspects(rel, _read(state, rel)))
+        source = _read(state, rel)
+        contexts[rel] = build_context(state["sandbox_path"], rel, source)  # ממצא 1: הקשר מהריפו, בלי מודל
+        raw.extend(deps.reviewer.find_suspects(rel, source, contexts[rel]))
     unique = dedupe(raw)
-    rejected = _rejected([s for s in raw if not any(s is u for u in unique)], "כפילות של חשד קרוב")
+    rejected = _rejected([s for s in raw if not any(s is u for u in unique)], "כפילות של חשד קרוב", "dedup")
     above, below = split_by_confidence(unique, config.SUSPECT_MIN_CONFIDENCE)
-    rejected += _rejected(below, "ביטחון נמוך")
+    rejected += _rejected(below, "ביטחון נמוך", "low_confidence")
     ranked = rank(above)
-    rejected += _rejected(ranked[config.MAX_SUSPECTS_TO_VERIFY :], "מעבר לתקרת האימות")
+    rejected += _rejected(ranked[config.MAX_SUSPECTS_TO_VERIFY :], "מעבר לתקרת האימות", "cap")
     verified, doubtful = [], []
     for s in ranked[: config.MAX_SUSPECTS_TO_VERIFY]:
-        verdict = deps.reviewer.check_suspect(_read(state, s["file"]), s)
+        verdict = deps.reviewer.check_suspect(_read(state, s["file"]), s, contexts.get(s["file"], ""))
         checked = {**s, "failing_input": verdict["failing_input"], "expected": verdict["expected"],
                    "actual": verdict["actual"]}  # fmt: skip
         if verdict["is_bug"]:
             verified.append(checked)
         else:
-            rejected += _rejected([checked], "המאמת לא מצא קלט שמפיל את הקוד")
+            rejected += _rejected([checked], "המאמת לא מצא קלט שמפיל את הקוד", "checker")
             doubtful.append(checked)
-    rejected += _rejected(verified[config.MAX_SUSPECTS :], "מעבר לתקרת החשדות")
+    rejected += _rejected(verified[config.MAX_SUSPECTS :], "מעבר לתקרת החשדות", "cap")
     return {"raw_suspects": raw, "suspects": verified[: config.MAX_SUSPECTS], "rejected_suspects": rejected,
             "doubtful_suspects": doubtful[: config.MAX_DOUBTFUL]}  # fmt: skip
 
@@ -338,7 +343,7 @@ def screen_fixes(state: ReviewState, deps: Deps) -> dict:
     rescued = {(s["file"], s["line"]) for s in kept_suspects}
     why = {r["file"]: r["status"] for r in report}
     rejected = [r for r in state.get("rejected_suspects", []) if (r["file"], r["line"]) not in rescued] + [
-        {**s, "rejected_because": f"התיקון נפסל בבדיקה: {why.get(s['file'], 'לא הוצע תיקון')}"
+        {**s, "rejected_at": "screening", "rejected_because": f"התיקון נפסל בבדיקה: {why.get(s['file'], 'לא הוצע תיקון')}"
          if s["file"] not in candidates else "תיקון אחר אושר בטסטים, וזה לא"}
         for s in dropped
     ]  # fmt: skip

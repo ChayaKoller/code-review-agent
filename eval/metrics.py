@@ -57,6 +57,23 @@ def fixed_bugs(bugs: list[dict], result: dict) -> list[str] | None:
     return [b["id"] for b in with_tests if _base(b["failing_test"]) in before and _base(b["failing_test"]) not in after]
 
 
+def lost_at(result: dict, bug: dict) -> str:
+    """משפך (ממצא 5): איפה בדרך הבאג האמיתי נעלם. מראה איזה שלב צריך שיפור.
+    not_suspected -> dedup / low_confidence / cap / checker -> screening -> not_fixed -> fixed"""
+    if any(_hits(s, bug, TOLERANCE) for s in result.get("suspects") or []):
+        fixed = fixed_bugs([bug], result)
+        if fixed is None:
+            return "kept_no_tests"
+        return "fixed" if fixed else "not_fixed"
+    raw = result.get("raw_suspects")
+    if raw is not None and not any(_hits(s, bug, TOLERANCE) for s in raw):
+        return "not_suspected"
+    for r in result.get("rejected_suspects") or []:
+        if _hits(r, bug, TOLERANCE) and r.get("rejected_at") != "dedup":
+            return r.get("rejected_at", "rejected")
+    return "not_suspected" if raw is None else "dedup"
+
+
 def score(result: dict, bugs: list[dict]) -> dict:
     """כל המדדים לריפו אחד."""
     suspects = result.get("suspects", [])
@@ -81,4 +98,5 @@ def score(result: dict, bugs: list[dict]) -> dict:
         "found": near["found"],
         "fixed": fixed,
         "fix_rate": (len(fixed) / len(testable)) if fixed is not None else None,
+        "lost_at": {b["id"]: lost_at(result, b) for b in bugs},
     }

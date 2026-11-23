@@ -48,13 +48,13 @@ class FakeReviewer:
         self.failures: list[str] = []  # פלט הכשל שהגיע בניסיון השני (screen_fixes)
         self.checked: list[dict] = []
 
-    def find_suspects(self, file, source):
+    def find_suspects(self, file, source, context=""):
         if not self.find or "page * size" not in source:
             return []
         line = source.splitlines().index("    start = page * size") + 1
         return [{"file": file, "line": line, "bug_type": "off_by_one", "reason": "page is 1-based", "confidence": 5}]
 
-    def check_suspect(self, source, suspect):
+    def check_suspect(self, source, suspect, context=""):
         self.checked.append(suspect)
         return {"is_bug": self.confirm, "failing_input": "get_page([1,2,3,4], 1, 2)" if self.confirm else "",
                 "expected": "[1, 2]", "actual": "[3, 4]"}  # fmt: skip
