@@ -8,6 +8,8 @@ load_dotenv()  # טוען את .env אל os.environ
 
 # --- מודל ---
 MODEL_NAME = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite")
+LLM_TEMPERATURE = 0  # תשובות יציבות ככל האפשר
+LLM_MAX_RETRIES = 3  # ניסיונות חוזרים כשהשכבה החינמית מחזירה שגיאת מכסה
 
 # --- בחירת קבצים לסקירה ---
 MIN_FILE_LINES = 5
@@ -31,6 +33,12 @@ COPY_IGNORE_DIRS = {
     ".tox",
 }
 
+# --- git: הורדת ריפו מקישור, ענף ודחיפה ---
+GIT_TIMEOUT_SECONDS = 300
+BRANCH_PREFIX = "cra/fix-"  # שם הענף: cra/fix-20261123-153000
+# קישורים שמותר לשכפל. file:// ונתיבים מקומיים עוברים דרך העתקה רגילה, לא דרך clone.
+GIT_URL_PREFIXES = ("https://", "http://", "ssh://", "git@")
+
 # --- Docker: כל הרצת קוד של הפרויקט הנבדק קורית שם ורק שם ---
 DOCKER_DIR = Path(__file__).resolve().parent.parent / "docker"
 DOCKER_PYTHON_VERSION = os.getenv("DOCKER_PYTHON_VERSION", "3.12")
@@ -50,6 +58,12 @@ REQUIREMENT_FILE_NAMES = (
     "requirements_test.txt",
     "test-requirements.txt",
 )
+# ריפו שמוגדר כחבילה (pyproject.toml / setup.py / setup.cfg): מתקינים אותו ב-image יחד עם
+# התלויות שלו ועם ה-extras של הטסטים. כך ריפו שהורד מקישור מקבל את הספריות שלו גם בלי requirements.
+# זה מריץ את קוד ההתקנה של הריפו, אבל רק בתוך Docker בזמן הבנייה. כדי לכבות: DOCKER_INSTALL_PROJECT=false
+DOCKER_INSTALL_PROJECT = os.getenv("DOCKER_INSTALL_PROJECT", "true").lower() not in ("0", "false", "no")
+PROJECT_METADATA_FILES = ("pyproject.toml", "setup.py", "setup.cfg")
+PROJECT_TEST_EXTRAS = ("test", "tests", "testing")
 DOCKER_CONTAINER_PREFIX = "cra-run-"
 DOCKER_MEMORY = "512m"
 DOCKER_CPUS = "1"

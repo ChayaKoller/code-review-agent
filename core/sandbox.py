@@ -1,5 +1,8 @@
 """core/sandbox.py: יצירה וניהול של העתק עבודה זמני.
 
+המקור יכול להיות קישור לגיט (https://... או git@...), תיקייה מקומית או קובץ .py בודד.
+קישור: עושים clone ישר לתוך התיקייה הזמנית. מקומי: מעתיקים (כולל .git).
+
 הכלל: כל כתיבה קורית רק בהעתק. המקור לא משתנה.
 הקובץ הזה לא מריץ קוד של הפרויקט הנבדק. ההרצה היא תפקידו של docker_runner.
 """
@@ -12,7 +15,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from core import config
+from core import config, git_ops
 
 
 class SandboxError(ValueError):
@@ -60,11 +63,11 @@ def validate_source(source_path: str) -> Path:
     return src
 
 
-def _validate_workspace(workspace_dir: str, source: Path) -> Path:
+def _validate_workspace(workspace_dir: str, source: Path | None) -> Path:
     ws = Path(workspace_dir).expanduser().resolve()
     if not ws.is_dir():
         raise SandboxError(f"תיקיית האב לא קיימת (צריך ליצור אותה קודם): {ws}")
-    if source.is_dir() and (ws == source or source in ws.parents):
+    if source is not None and source.is_dir() and (ws == source or source in ws.parents):
         raise SandboxError("תיקיית האב לא יכולה להיות הריפו עצמו או בתוכו: ההעתקה תכלול את עצמה")
     return ws
 
@@ -102,17 +105,26 @@ class Sandbox:
     """
 
     def __init__(self, source_path: str, workspace_dir: str | None = None):
-        self.source = validate_source(source_path)
+        self.url: str | None = None
+        if git_ops.is_git_url(source_path):
+            self.url = source_path.strip()
+            self.source: Path | None = None
+            self.is_single_file = False
+        else:
+            self.source = validate_source(source_path)
+            self.is_single_file = self.source.is_file()
         parent = workspace_dir or config.WORKSPACE_DIR
         self.workspace = _validate_workspace(parent, self.source) if parent else None
-        self.is_single_file = self.source.is_file()
         self._tmp: Path | None = None  # התת-תיקייה הייחודית שיצרנו (ורק אותה מוחקים)
         self.path: Path | None = None  # ההעתק עצמו
 
     def __enter__(self) -> "Sandbox":
         self._tmp = Path(tempfile.mkdtemp(prefix=config.SANDBOX_PREFIX, dir=self.workspace))
         try:
-            if self.is_single_file:
+            if self.url:
+                self.path = self._tmp / git_ops.repo_name_from_url(self.url)
+                git_ops.clone(self.url, self.path)
+            elif self.is_single_file:
                 self.path = self._tmp / "single_file"
                 self.path.mkdir()
                 shutil.copy2(self.source, self.path / self.source.name)
@@ -131,6 +143,16 @@ class Sandbox:
     def __exit__(self, exc_type, exc, tb) -> None:
         self.cleanup()
 
+    def open(self) -> "Sandbox":
+        """כמו with, אבל בלי ניקוי אוטומטי: הגרף נעצר ב-interrupt וממשיך אחר כך,
+        ולכן ההעתק צריך לחיות בין הקריאות. הניקוי: cleanup() או remove_sandbox(work_dir)."""
+        return self.__enter__()
+
+    @property
+    def work_dir(self) -> Path | None:
+        """התיקייה הייחודית שנוצרה (cra_sandbox_xxxx). רק אותה מוחקים."""
+        return self._tmp
+
     @property
     def has_tests(self) -> bool:
         if self.path is None or self.is_single_file:
@@ -147,7 +169,7 @@ class Sandbox:
         if (
             not path.name.startswith(config.SANDBOX_PREFIX)
             or path == self.workspace
-            or path == self.source
+            or (self.source is not None and path == self.source)
         ):
             raise RuntimeError(f"בטיחות: מסרבת למחוק {path}. זו לא תיקייה שה-sandbox יצר")
 
@@ -157,3 +179,13 @@ class Sandbox:
             _rmtree(self._tmp)
         self._tmp = None
         self.path = None
+
+
+def remove_sandbox(work_dir: str | Path) -> None:
+    """מוחק העתק לפי התיקייה הייחודית שלו (נשמרת ב-State בתור work_dir).
+    רשת ביטחון: רק תיקייה ששמה מתחיל בקידומת של ה-sandbox."""
+    path = Path(work_dir)
+    if not path.name.startswith(config.SANDBOX_PREFIX):
+        raise RuntimeError(f"בטיחות: מסרבת למחוק {path}. זו לא תיקייה שה-sandbox יצר")
+    if path.exists():
+        _rmtree(path)

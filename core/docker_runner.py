@@ -10,9 +10,14 @@
 ונשמר לפי חתימה של התוכן, כך שהרצה שנייה על אותן תלויות לא בונה מחדש.
 הבנייה עצמה כן צריכה רשת (pip), אבל היא קורית רק ב-Docker.
 
-מגבלות ידועות: נקראים רק קבצי requirements בשורש הריפו. שורות כמו `-e .` או
-הפניות `-r` לקבצים בתיקיות אחרות לא נתמכות. ריפו שמגדיר תלויות רק ב-pyproject.toml
-או ב-setup.py לא יקבל ספריות אוטומטית (אפשר להוסיף ידנית עם extra_packages).
+ריפו שמוגדר כחבילה (pyproject.toml עם [project] או [build-system], setup.py, setup.cfg):
+הריפו עצמו מותקן ב-image עם התלויות שלו ועם ה-extras של הטסטים (test/tests/testing).
+כך ריפו שהורד מקישור מקבל את הספריות שלו גם בלי requirements. בהרצה PYTHONPATH מצביע
+על ההעתק (/work/src ו-/work), ולכן הקוד שנבדק הוא תמיד ההעתק עם התיקון ולא הגרסה שהותקנה.
+אם ההתקנה של הריפו נכשלת, הבנייה ממשיכה (רק התלויות מ-requirements), והטסטים יגלו ספריות חסרות.
+
+מגבלות ידועות: נקראים רק קבצים בשורש הריפו. שורות כמו `-e .` או הפניות `-r` לקבצים
+בתיקיות אחרות בתוך requirements לא נתמכות. גרסת Python אחת לכל ה-images.
 
 ב-core אין print. הפונקציות מחזירות נתונים או זורקות DockerError.
 """
@@ -41,9 +46,15 @@ FROM @@BASE@@
 ARG PIP_EXTRA_ARGS=""
 USER root
 COPY reqs/ /tmp/reqs/
-RUN cd /tmp/reqs && pip install ${PIP_EXTRA_ARGS} @@INSTALL@@ && rm -rf /tmp/reqs
-USER runner
+RUN cd /tmp/reqs && @@INSTALL@@ && rm -rf /tmp/reqs
+@@PROJECT@@USER runner
 """
+
+# מתקין את הריפו עצמו (עם התלויות שלו). כישלון לא עוצר את הבנייה: מדפיס סימן ומוחק.
+_PROJECT_STEP = """COPY src/ /tmp/src/
+RUN pip install ${PIP_EXTRA_ARGS} "/tmp/src[@@EXTRAS@@]" || echo "CRA_PROJECT_INSTALL_FAILED"; rm -rf /tmp/src
+"""
+_PACKAGE_MARKERS = ("[project]", "[build-system]", "[tool.poetry]")
 
 # בודק קומפילציה בלי להריץ את הקוד ובלי לכתוב קבצים (בלי .pyc).
 # מדפיס שורת JSON אחת: {קובץ: {"line": מספר, "msg": הודעה}} (ריק = הכול תקין)
@@ -132,6 +143,34 @@ def find_requirement_files(root: str | Path) -> list[str]:
     """קבצי requirements מוכרים בשורש הריפו (שמות בלבד, בסדר קבוע)."""
     root = Path(root)
     return [name for name in config.REQUIREMENT_FILE_NAMES if (root / name).is_file()]
+
+
+def find_project_files(root: str | Path) -> list[str]:
+    """קבצי ההגדרה של הריפו כחבילה. pyproject.toml שיש בו רק הגדרות כלים (למשל pytest) לא נחשב."""
+    if not config.DOCKER_INSTALL_PROJECT:
+        return []
+    root = Path(root)
+    found = []
+    for name in config.PROJECT_METADATA_FILES:
+        path = root / name
+        if not path.is_file():
+            continue
+        if name == "pyproject.toml":
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if not any(marker in text for marker in _PACKAGE_MARKERS):
+                continue
+        found.append(name)
+    return found
+
+
+def _copy_project(root: Path, dest: Path) -> None:
+    """מעתיק את הריפו להקשר הבנייה, בלי .git ובלי תיקיות שמתעלמים מהן."""
+    shutil.copytree(
+        root,
+        dest,
+        ignore=shutil.ignore_patterns(".git", *config.COPY_IGNORE_DIRS, "*.pyc"),
+        copy_function=shutil.copyfile,  # בלי סימון קריאה-בלבד
+    )
 
 
 def _clean_packages(extra_packages: list[str] | None) -> list[str]:
@@ -232,12 +271,14 @@ class DockerRunner:
         """שם ה-image של הריפו, לפי חתימה של התלויות שלו. None = אין תלויות (משתמשים בבסיס)."""
         root = Path(root)
         files = find_requirement_files(root)
+        project = find_project_files(root)
         packages = _clean_packages(extra_packages)
-        if not files and not packages:
+        if not files and not project and not packages:
             return None
+        # החתימה רק על קבצי ההגדרה, לא על הקוד: תיקון בקוד לא גורם לבנייה מחדש
         digest = hashlib.sha256()
         digest.update(self.image.encode("utf-8"))
-        for name in files:
+        for name in files + project:
             digest.update(b"\0file\0" + name.encode("utf-8") + b"\0")
             digest.update((root / name).read_bytes())
         for pkg in packages:
@@ -247,6 +288,7 @@ class DockerRunner:
     def _build_deps_image(self, root: Path, tag: str, extra_packages: list[str] | None) -> None:
         self.ensure_image()
         files = find_requirement_files(root)
+        project = find_project_files(root)
         packages = _clean_packages(extra_packages)
         with tempfile.TemporaryDirectory(prefix="cra_ctx_") as tmp:
             ctx = Path(tmp)
@@ -259,8 +301,15 @@ class DockerRunner:
             if packages:
                 (reqs / EXTRA_REQUIREMENTS_NAME).write_text("\n".join(packages) + "\n", encoding="utf-8")
                 names.append(EXTRA_REQUIREMENTS_NAME)
-            dockerfile = _DEPS_DOCKERFILE.replace("@@BASE@@", self.image).replace(
-                "@@INSTALL@@", " ".join(f"-r {n}" for n in names)
+            install = "pip install ${PIP_EXTRA_ARGS} " + " ".join(f"-r {n}" for n in names) if names else "true"
+            project_step = ""
+            if project:
+                _copy_project(root, ctx / "src")
+                project_step = _PROJECT_STEP.replace("@@EXTRAS@@", ",".join(config.PROJECT_TEST_EXTRAS))
+            dockerfile = (
+                _DEPS_DOCKERFILE.replace("@@BASE@@", self.image)
+                .replace("@@INSTALL@@", install)
+                .replace("@@PROJECT@@", project_step)
             )
             (ctx / "Dockerfile").write_text(dockerfile, encoding="utf-8")
             cmd = [
@@ -308,6 +357,8 @@ class DockerRunner:
             "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
             "--read-only", "--tmpfs", "/tmp:rw,size=128m",
             "-e", "HOME=/tmp", "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "PYTHONIOENCODING=utf-8",
+            # הקוד מההעתק קודם לגרסה שהותקנה ב-image (חשוב לריפו במבנה src/)
+            "-e", "PYTHONPATH=/work/src:/work",
             "--mount", f"type=bind,source={src},target=/work",
             "-w", "/work", image, *command,
         ]  # fmt: skip

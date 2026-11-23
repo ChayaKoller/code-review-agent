@@ -1,40 +1,76 @@
-"""core/state.py: המבנה של ה-State שעובר בין הצמתים בגרף."""
+"""core/state.py: המבנה של ה-State שעובר בין הצמתים בגרף.
+
+הכול כאן ערכים פשוטים (מחרוזות, מספרים, רשימות ומילונים), כדי שה-checkpointer
+יוכל לשמור את ה-State כשהגרף נעצר ב-interrupt.
+"""
 from typing import TypedDict
 
 # רמות אימות של תיקון. מוצגות למשתמש ליד ה-diff, כדי שלא יהיה רושם שתיקון הוכח כשלא הוכח.
 VERIFY_TESTS = "tests"  # הטסטים של הריפו רצו ב-Docker
 VERIFY_COMPILE = "compile_only"  # אין טסטים (או שאי אפשר להריץ אותם): נבדק רק שהקוד מתקמפל
 
+# החלטות של המשתמשת
+APPROVE = "approve"
+REJECT = "reject"
+REJECT_WITH_NOTE = "reject_with_note"
+PUSH = "push"
+NO_PUSH = "no_push"
+
 
 class Suspect(TypedDict):
-    """שורה חשודה אחת: באיזה קובץ ובאיזו שורה.
-
-    בשלב 3 אפשר להוסיף לכאן שדות (סוג באג, הסבר) בלי לשנות את שאר ה-State.
-    """
+    """חשד לבאג אחד."""
 
     file: str  # נתיב יחסי לשורש הריפו, למשל "app/utils.py"
     line: int  # מספר שורה, מתחילים לספור מ-1
+    bug_type: str  # off_by_one / none_handling / logic
+    reason: str  # הסבר קצר של המודל
 
 
-class ReviewState(TypedDict):
-    # --- ריפו ו-sandbox ---
-    repo_path: str  # המקור (ריפו או קובץ בודד). לא כותבים אליו, רק דוחפים ממנו (אחרי אישור שני)
-    sandbox_path: str  # ההעתק הזמני שעובדים עליו
-    branch_name: str  # שם הענף שנוצר בהעתק
-    has_tests: bool  # האם יש בהעתק טסטים להריץ
+class Edit(TypedDict):
+    """תיקון אחד: החלפה של טווח שורות בקוד חדש."""
+
+    file: str
+    start_line: int  # כולל
+    end_line: int  # כולל
+    new_code: str  # הקוד שמחליף את השורות (יכול להיות כמה שורות)
+    explanation: str
+
+
+class ReviewState(TypedDict, total=False):
+    # --- קלט ---
+    repo_path: str  # המקור: קישור לגיט, תיקייה או קובץ .py. לא כותבים אליו לעולם
+    include: list[str]  # בחירה ידנית של קבצים (אופציונלי)
+    exclude: list[str]  # קבצים להוצאה (אופציונלי)
+
+    # --- sandbox ---
+    work_dir: str  # התיקייה הייחודית (cra_sandbox_xxxx). רק אותה מוחקים בסוף
+    sandbox_path: str  # ההעתק שעובדים עליו (בתוך work_dir)
+    branch_name: str  # הענף שנוצר בהעתק
+    is_git_repo: bool  # יש .git: אפשר commit ודחיפה
+    has_tests: bool  # יש טסטים להריץ
+    single_file: str  # אם המקור הוא קובץ .py בודד: שם הקובץ. אחרת ריק
 
     # --- בחירה ואיתור ---
     files: list[str]  # הקבצים שנבחרו לסקירה (נתיבים יחסיים)
+    skipped: dict[str, str]  # קבצים שדולגו -> הסיבה
     suspects: list[Suspect]  # החשודים, מכל הקבצים
+    failing_tests: list[str]  # טסטים שנכשלו כבר לפני התיקון (כדי לא להאשים בהם את התיקון)
 
-    # --- הרצת טסטים ---
-    failing_tests: list[str]  # למשל "tests/test_utils.py::test_page" (הקובץ לפני ::)
-
-    # --- תיקון ואישור (שלב 3 ואילך) ---
-    old_line: str
-    new_line: str
-    verification: str  # VERIFY_TESTS או VERIFY_COMPILE: איך נבדק התיקון
-    decision: str  # אישור ראשון: על ה-diff
-    push_decision: str  # אישור שני: על הדחיפה
+    # --- תיקון ואישור ראשון ---
+    fixes: list[Edit]
+    diff: str  # ה-diff שמוצג למשתמשת
+    decision: str  # APPROVE / REJECT / REJECT_WITH_NOTE
     rejection_note: str
-    attempts: int
+    attempts: int  # כמה פעמים הוצע תיקון
+
+    # --- אימות ואישור שני ---
+    commit_sha: str  # ה-commit בענף בהעתק
+    verification: str  # VERIFY_TESTS או VERIFY_COMPILE
+    verify_ok: bool
+    verify_summary: str  # טקסט למשתמשת
+    new_failures: list[str]  # טסטים שעברו לפני התיקון ונכשלו אחריו
+    push_decision: str  # PUSH / NO_PUSH
+
+    # --- תוצאה ---
+    pushed: bool
+    result: str  # סיכום סופי למשתמשת
