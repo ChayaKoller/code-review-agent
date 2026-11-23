@@ -1,0 +1,52 @@
+[
+  {
+    "id": "bug1",
+    "file": "stats.py",
+    "line": 4,
+    "type": "off-by-one",
+    "description": "range(len(values) - window) skips the last window; should be len(values) - window + 1",
+    "buggy": "    for i in range(len(values) - window):",
+    "fixed": "    for i in range(len(values) - window + 1):",
+    "failing_test": "tests/test_stats.py"
+  },
+  {
+    "id": "bug2",
+    "file": "pagination.py",
+    "line": 3,
+    "type": "off-by-one",
+    "description": "pages are 1-based, but start is computed as if 0-based; should be (page - 1) * page_size",
+    "buggy": "    start = page * page_size",
+    "fixed": "    start = (page - 1) * page_size",
+    "failing_test": "tests/test_pagination.py"
+  },
+  {
+    "id": "bug3",
+    "file": "shop.py",
+    "line": 3,
+    "type": "none-handling",
+    "description": "prices that are None are not filtered out, so sum() raises TypeError",
+    "buggy": "    prices = [p[\"price\"] for p in products]",
+    "fixed": "    prices = [p[\"price\"] for p in products if p[\"price\"] is not None]",
+    "failing_test": "tests/test_shop.py"
+  },
+  {
+    "id": "bug4",
+    "file": "config_utils.py",
+    "line": 5,
+    "type": "none-handling",
+    "description": "missing key raises KeyError instead of returning default",
+    "buggy": "        current = current[key]",
+    "fixed": "        if not isinstance(current, dict) or key not in current:\n            return default\n        current = current[key]",
+    "failing_test": "tests/test_config_utils.py"
+  },
+  {
+    "id": "bug5",
+    "file": "calendar_utils.py",
+    "line": 3,
+    "type": "logic",
+    "description": "century rule is wrong: 'and year % 400 == 0' should be 'or', inside parentheses",
+    "buggy": "    return year % 4 == 0 and year % 100 != 0 and year % 400 == 0",
+    "fixed": "    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)",
+    "failing_test": "tests/test_calendar_utils.py"
+  }
+]
