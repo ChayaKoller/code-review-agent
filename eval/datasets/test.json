@@ -1,0 +1,330 @@
+[
+  {
+    "id": "thefuck_1",
+    "repo": "https://github.com/nvbn/thefuck",
+    "split": "test",
+    "source": "BugsInPy thefuck bug 1",
+    "buggy_commit": "2ced7a7f33ae0bec3ffc7a43ce95330bdf6cfcb9",
+    "fixed_commit": "444908ce1c17767ef4aaf9e0b4950497914f7f63",
+    "bug_files": [
+      "thefuck/rules/pip_unknown_command.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [],
+    "include": [
+      "thefuck/rules/pip_unknown_command.py",
+      "thefuck/rules/port_already_in_use.py",
+      "thefuck/rules/prove_recursively.py",
+      "thefuck/rules/pyenv_no_such_command.py"
+    ],
+    "bugs": [
+      {
+        "id": "thefuck_1",
+        "file": "thefuck/rules/pip_unknown_command.py",
+        "line": 15,
+        "type": "logic",
+        "description": "regex [a-z]+ too narrow: command names with '+' or '-' are not matched",
+        "buggy": "    broken_cmd = re.findall(r'ERROR: unknown command \\\"([a-z]+)\\\"',\n    new_cmd = re.findall(r'maybe you meant \\\"([a-z]+)\\\"', command.output)[0]",
+        "fixed": "    broken_cmd = re.findall(r'ERROR: unknown command \"([^\"]+)\"',\n    new_cmd = re.findall(r'maybe you meant \"([^\"]+)\"', command.output)[0]",
+        "failing_test": "tests/rules/test_pip_unknown_command.py::test_get_new_command",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/nvbn/thefuck/commit/444908ce1c17767ef4aaf9e0b4950497914f7f63"
+      }
+    ]
+  },
+  {
+    "id": "thefuck_2",
+    "repo": "https://github.com/nvbn/thefuck",
+    "split": "test",
+    "source": "BugsInPy thefuck bug 2",
+    "buggy_commit": "40ab4eb62db57627bff10cf029d29c94704086a2",
+    "fixed_commit": "78ef9eec88f43d5727986be2237f6e0e250cbbbc",
+    "bug_files": [
+      "thefuck/utils.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [],
+    "include": [
+      "thefuck/utils.py",
+      "thefuck/argument_parser.py",
+      "thefuck/conf.py",
+      "thefuck/const.py"
+    ],
+    "bugs": [
+      {
+        "id": "thefuck_2",
+        "file": "thefuck/utils.py",
+        "line": 121,
+        "type": "logic",
+        "description": "PATH split on ':' instead of os.pathsep (breaks on Windows paths)",
+        "buggy": "            for path in os.environ.get('PATH', '').split(':')",
+        "fixed": "            for path in os.environ.get('PATH', '').split(os.pathsep)",
+        "failing_test": "tests/test_utils.py::test_get_all_executables_pathsep",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/nvbn/thefuck/commit/78ef9eec88f43d5727986be2237f6e0e250cbbbc"
+      }
+    ]
+  },
+  {
+    "id": "thefuck_12",
+    "repo": "https://github.com/nvbn/thefuck",
+    "split": "test",
+    "source": "BugsInPy thefuck bug 12",
+    "buggy_commit": "4c2fc490f280ca3921785d8f58a37274ced35ce6",
+    "fixed_commit": "ca787a1cba3cc9b26b43919c5e60acb40ebcd919",
+    "bug_files": [
+      "thefuck/rules/no_command.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [
+      "pytest==3.10.1",
+      "pytest-mock==3.1.0",
+      "mock==4.0.2",
+      "pytest-benchmark==3.2.3"
+    ],
+    "include": [
+      "thefuck/rules/no_command.py",
+      "thefuck/rules/no_such_file.py",
+      "thefuck/rules/npm_wrong_command.py",
+      "thefuck/rules/open.py"
+    ],
+    "bugs": [
+      {
+        "id": "thefuck_12",
+        "file": "thefuck/rules/no_command.py",
+        "line": 9,
+        "type": "logic",
+        "description": "match() accepts commands that exist; missing 'not which(...)' check",
+        "buggy": "    return (command.script_parts",
+        "fixed": "    return (not which(command.script_parts[0])",
+        "failing_test": "tests/rules/test_no_command.py::test_not_match",
+        "other_failing_tests": [
+          "tests/rules/test_no_command.py::test_match"
+        ],
+        "fix_commit": "https://github.com/nvbn/thefuck/commit/ca787a1cba3cc9b26b43919c5e60acb40ebcd919"
+      }
+    ]
+  },
+  {
+    "id": "thefuck_18",
+    "repo": "https://github.com/nvbn/thefuck",
+    "split": "test",
+    "source": "BugsInPy thefuck bug 18",
+    "buggy_commit": "b65a9a0a4fd9bef394b45a1d367d29aa1e1c403e",
+    "fixed_commit": "c3b1ba763708b8faaaf55717c436c4cd4c57a7ea",
+    "bug_files": [
+      "thefuck/rules/sudo.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [
+      "pytest==3.10.1",
+      "pytest-mock==3.1.0",
+      "mock==4.0.2",
+      "pytest-benchmark==3.2.3"
+    ],
+    "include": [
+      "thefuck/rules/sudo.py",
+      "thefuck/rules/switch_lang.py",
+      "thefuck/rules/systemctl.py",
+      "thefuck/rules/tmux.py"
+    ],
+    "bugs": [
+      {
+        "id": "thefuck_18",
+        "file": "thefuck/rules/sudo.py",
+        "line": 24,
+        "type": "logic",
+        "description": "rule matches a command that already starts with sudo (should return False)",
+        "buggy": "    for pattern in patterns:",
+        "fixed": "    if command.script_parts and command.script_parts[0] == 'sudo':\n        return False\n\n    for pattern in patterns:",
+        "failing_test": "tests/rules/test_sudo.py::test_not_match",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/nvbn/thefuck/commit/c3b1ba763708b8faaaf55717c436c4cd4c57a7ea",
+        "note": "fix inserts lines before this line (nothing removed)"
+      }
+    ]
+  },
+  {
+    "id": "thefuck_25",
+    "repo": "https://github.com/nvbn/thefuck",
+    "split": "test",
+    "source": "BugsInPy thefuck bug 25",
+    "buggy_commit": "42a8b4f639269886e468762e6d100b6f01aad8ab",
+    "fixed_commit": "298c04f89c081dc16c8653aa017ca85dd14bfad6",
+    "bug_files": [
+      "thefuck/rules/mkdir_p.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [
+      "pytest==3.10.1",
+      "pytest-mock==3.1.0",
+      "mock==4.0.2",
+      "pytest-benchmark==3.2.3"
+    ],
+    "include": [
+      "thefuck/rules/mkdir_p.py",
+      "thefuck/rules/no_command.py",
+      "thefuck/rules/no_such_file.py",
+      "thefuck/rules/open.py"
+    ],
+    "bugs": [
+      {
+        "id": "thefuck_25",
+        "file": "thefuck/rules/mkdir_p.py",
+        "line": 13,
+        "type": "logic",
+        "description": "regex anchored with ^, so 'hdfs dfs -mkdir x' (mkdir not at the start) is not fixed",
+        "buggy": "    return re.sub('^mkdir (.*)', 'mkdir -p \\\\1', command.script)",
+        "fixed": "    return re.sub('\\\\bmkdir (.*)', 'mkdir -p \\\\1', command.script)",
+        "failing_test": "tests/rules/test_mkdir_p.py::test_get_new_command",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/nvbn/thefuck/commit/298c04f89c081dc16c8653aa017ca85dd14bfad6"
+      }
+    ]
+  },
+  {
+    "id": "thefuck_27",
+    "repo": "https://github.com/nvbn/thefuck",
+    "split": "test",
+    "source": "BugsInPy thefuck bug 27",
+    "buggy_commit": "bc6b107066d3f1e60b4cfcaa8cf6399e98cf1b1c",
+    "fixed_commit": "1becd92b126a368d6e7d93aa8eea209414ce4aa2",
+    "bug_files": [
+      "thefuck/rules/open.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [
+      "pytest==3.10.1",
+      "pytest-mock==3.1.0",
+      "mock==4.0.2",
+      "pytest-benchmark==3.2.3"
+    ],
+    "include": [
+      "thefuck/rules/open.py",
+      "thefuck/rules/pacman.py",
+      "thefuck/rules/pacman_not_found.py",
+      "thefuck/rules/pip_unknown_command.py"
+    ],
+    "bugs": [
+      {
+        "id": "thefuck_27",
+        "file": "thefuck/rules/open.py",
+        "line": 26,
+        "type": "logic",
+        "description": "hard-coded slice script[5:] assumes 'open ' prefix; breaks for other open commands",
+        "buggy": "    return 'open http://' + command.script[5:]",
+        "fixed": "    return command.script.replace('open ', 'open http://')",
+        "failing_test": "tests/rules/test_open.py::test_get_new_command",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/nvbn/thefuck/commit/1becd92b126a368d6e7d93aa8eea209414ce4aa2"
+      }
+    ]
+  },
+  {
+    "id": "thefuck_32",
+    "repo": "https://github.com/nvbn/thefuck",
+    "split": "test",
+    "source": "BugsInPy thefuck bug 32",
+    "buggy_commit": "cb33c912e5f2f4c2da6b70d708ff0437bfcd3b94",
+    "fixed_commit": "25cc98a21a3450a046caf418f08713c82a290805",
+    "bug_files": [
+      "thefuck/rules/ls_lah.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [
+      "pytest==3.10.1",
+      "pytest-mock==3.1.0",
+      "mock==4.0.2",
+      "pytest-benchmark==3.2.3"
+    ],
+    "include": [
+      "thefuck/rules/ls_lah.py",
+      "thefuck/rules/man.py",
+      "thefuck/rules/man_no_space.py",
+      "thefuck/rules/mkdir_p.py"
+    ],
+    "bugs": [
+      {
+        "id": "thefuck_32",
+        "file": "thefuck/rules/ls_lah.py",
+        "line": 2,
+        "type": "logic",
+        "description": "substring check 'ls' in script matches any command containing ls",
+        "buggy": "    return 'ls' in command.script and not ('ls -' in command.script)",
+        "fixed": "    return (command.script == 'ls'\n            or command.script.startswith('ls ')\n            and not ('ls -' in command.script))",
+        "failing_test": "tests/rules/test_ls_lah.py::test_match",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/nvbn/thefuck/commit/25cc98a21a3450a046caf418f08713c82a290805"
+      }
+    ]
+  },
+  {
+    "id": "httpie_3",
+    "repo": "https://github.com/httpie/httpie",
+    "split": "test",
+    "source": "BugsInPy httpie bug 3",
+    "buggy_commit": "8c33e5e3d31d3cd6476c4d9bc963a4c529f883d2",
+    "fixed_commit": "589887939507ff26d36ec74bd2c045819cfa3d56",
+    "bug_files": [
+      "httpie/sessions.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [],
+    "include": [
+      "httpie/sessions.py",
+      "httpie/utils.py",
+      "httpie/__main__.py",
+      "httpie/cli.py"
+    ],
+    "bugs": [
+      {
+        "id": "httpie_3",
+        "file": "httpie/sessions.py",
+        "line": 104,
+        "type": "none-handling",
+        "description": "header explicitly unset (value None) crashes on value.decode()",
+        "buggy": "            value = value.decode('utf8')",
+        "fixed": "\n            if value is None:\n                continue  # Ignore explicitely unset headers\n\n            value = value.decode('utf8')",
+        "failing_test": "tests/test_sessions.py::TestSession::test_download_in_session",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/httpie/httpie/commit/589887939507ff26d36ec74bd2c045819cfa3d56",
+        "note": "fix inserts lines before this line (nothing removed)"
+      }
+    ]
+  },
+  {
+    "id": "pysnooper_3",
+    "repo": "https://github.com/cool-RR/PySnooper",
+    "split": "test",
+    "source": "BugsInPy PySnooper bug 3",
+    "buggy_commit": "6e3d797be3fa0a746fb5b1b7c7fea78eb926c208",
+    "fixed_commit": "15555ed760000b049aff8fecc79d29339c1224c3",
+    "bug_files": [
+      "pysnooper/pysnooper.py"
+    ],
+    "python": "3.8",
+    "extra_packages": [
+      "python_toolbox"
+    ],
+    "include": [
+      "pysnooper/pysnooper.py",
+      "pysnooper/tracer.py",
+      "pysnooper/utils.py",
+      "pysnooper/pycompat.py"
+    ],
+    "bugs": [
+      {
+        "id": "pysnooper_3",
+        "file": "pysnooper/pysnooper.py",
+        "line": 26,
+        "type": "logic",
+        "description": "write() uses undefined name output_path instead of output (NameError)",
+        "buggy": "            with open(output_path, 'a') as output_file:",
+        "fixed": "            with open(output, 'a') as output_file:",
+        "failing_test": "tests/test_pysnooper.py::test_file_output",
+        "other_failing_tests": [],
+        "fix_commit": "https://github.com/cool-RR/PySnooper/commit/15555ed760000b049aff8fecc79d29339c1224c3"
+      }
+    ]
+  }
+]

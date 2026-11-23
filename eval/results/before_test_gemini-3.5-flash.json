@@ -1,0 +1,66 @@
+[
+  {
+    "id": "pysnooper_3",
+    "metrics": {
+      "bugs": 1,
+      "suspects": 2,
+      "recall": 1.0,
+      "precision": 0.5,
+      "recall_exact": 1.0,
+      "precision_exact": 0.5,
+      "false_positives": 1,
+      "found": [
+        "pysnooper_3"
+      ],
+      "fixed": [
+        "pysnooper_3"
+      ],
+      "fix_rate": 1.0
+    },
+    "result": {
+      "suspects": [
+        {
+          "file": "pysnooper/pysnooper.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The variable output_path is not defined; output should be used instead."
+        },
+        {
+          "file": "pysnooper/tracer.py",
+          "line": 15,
+          "bug_type": "logic",
+          "reason": "str.format does not support slicing, causing a TypeError whenever len(r) > 100."
+        }
+      ],
+      "fixes": [
+        {
+          "file": "pysnooper/pysnooper.py",
+          "start_line": 26,
+          "end_line": 26,
+          "new_code": "            with open(output, 'a') as output_file:",
+          "explanation": "Use output instead of undefined output_path variable."
+        },
+        {
+          "file": "pysnooper/tracer.py",
+          "start_line": 15,
+          "end_line": 15,
+          "new_code": "        r = r[:97] + '...'",
+          "explanation": "Fix string format slicing error by using direct string truncation and concatenation."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/test_pysnooper.py::test_file_output"
+      ],
+      "failed_after": [],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 115.8,
+      "llm_calls": 6,
+      "input_tokens": 7757,
+      "output_tokens": 7803
+    }
+  }
+]

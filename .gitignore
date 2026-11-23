@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 cra_report.md
 cra_fix.patch
+eval/.cache/

@@ -72,7 +72,8 @@ for name in sys.argv[1:]:
 print(json.dumps(errors))
 """
 
-_FAILED_LINE = re.compile(r"^(FAILED|ERROR) (\S+)", re.MULTILINE)
+# pytest 5+ כותב FAILED, ו-pytest ישן (3.x, בריפוזיטוריז של ה-test set) כותב FAIL
+_FAILED_LINE = re.compile(r"^(FAILED|FAIL|ERROR) (\S+)", re.MULTILINE)
 _MISSING_MODULE = re.compile(r"ModuleNotFoundError: No module named '([^']+)'")
 
 

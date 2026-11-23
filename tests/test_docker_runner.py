@@ -287,3 +287,11 @@ def test_compile_check_uses_the_base_image_even_with_requirements(tmp_path, runn
 def test_file_of_test():
     assert file_of_test("tests/test_a.py::test_x") == "tests/test_a.py"
     assert file_of_test("tests/test_a.py") == "tests/test_a.py"
+
+
+def test_failed_line_matches_old_and_new_pytest():
+    """pytest 5+ כותב FAILED, pytest 3.x (ריפוזיטוריז ישנים ב-test set) כותב FAIL."""
+    from core.docker_runner import _FAILED_LINE
+
+    out = "FAILED tests/a.py::t1 - assert 1\nFAIL tests/b.py::t2\nERROR tests/c.py\n1 failed"
+    assert [m.group(2) for m in _FAILED_LINE.finditer(out)] == ["tests/a.py::t1", "tests/b.py::t2", "tests/c.py"]

@@ -32,18 +32,29 @@ def _is_test_path(path: str) -> bool:
     return any(p in ("tests", "test") for p in parts[:-1]) or name.startswith("test_") or name.endswith("_test.py")
 
 
+def _base(test_id: str) -> str:
+    """שם הטסט בלי הפרמטרים: 'a.py::t[x y]' -> 'a.py::t'.
+    בטסט עם פרמטרים יש כמה מקרים, ו-pytest חותך את השם ברווח הראשון, ולכן משווים לפי השם בלבד.
+    "תוקן" = אף מקרה של הטסט לא נכשל אחרי התיקון."""
+    return test_id.split("[", 1)[0]
+
+
 def fixed_bugs(bugs: list[dict], result: dict) -> list[str] | None:
     """אילו באגים תוקנו לפי הטסטים. None אם אין טסטים בריפו."""
     with_tests = [b for b in bugs if b.get("failing_test")]
-    if not with_tests or result.get("verification") != "tests":
+    if not with_tests:
         return None
+    if not result.get("verification"):
+        return []  # לא הוצע (או לא הוחל) תיקון: הבאג לא תוקן. בלי זה הריפו לא נספר בכלל בממוצע
+    if result.get("verification") != "tests":
+        return None  # הטסטים לא רצו (למשל התקנה נכשלה): אין שופט
     if result.get("new_failures"):  # התיקון שבר טסט אחר: אף באג לא נחשב מתוקן
         return []
     if any(_is_test_path(e["file"]) for e in result.get("fixes", [])):
         return []  # שינוי בקובץ טסט פוסל
-    before = set(result.get("failing_tests", []))
-    after = set(result.get("failed_after", []))
-    return [b["id"] for b in with_tests if b["failing_test"] in before and b["failing_test"] not in after]
+    before = {_base(t) for t in result.get("failing_tests", [])}
+    after = {_base(t) for t in result.get("failed_after", [])}
+    return [b["id"] for b in with_tests if _base(b["failing_test"]) in before and _base(b["failing_test"]) not in after]
 
 
 def score(result: dict, bugs: list[dict]) -> dict:
