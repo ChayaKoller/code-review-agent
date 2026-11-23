@@ -3,3 +3,5 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+cra_report.md
+cra_fix.patch

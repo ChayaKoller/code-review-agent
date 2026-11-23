@@ -220,6 +220,7 @@ def verify_fix(state: ReviewState, deps: Deps) -> dict:
         "verify_ok": ok,
         "verify_summary": summary,
         "new_failures": new_failures,
+        "failed_after": v.tests.failed if v.tests is not None else [],
     }
 
 

@@ -9,7 +9,10 @@ load_dotenv()  # טוען את .env אל os.environ
 # --- מודל ---
 MODEL_NAME = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite")
 LLM_TEMPERATURE = 0  # תשובות יציבות ככל האפשר
-LLM_MAX_RETRIES = 3  # ניסיונות חוזרים כשהשכבה החינמית מחזירה שגיאת מכסה
+LLM_MAX_RETRIES = 3  # ניסיונות חוזרים בתוך הספרייה של Gemini
+# אחרי זה: עוד ניסיונות שלנו, בהמתנה שמכפילה את עצמה (10, 20, 40, 80 שניות)
+LLM_BUSY_RETRIES = 5
+LLM_RETRY_FIRST_DELAY = 10
 
 # --- בחירת קבצים לסקירה ---
 MIN_FILE_LINES = 5

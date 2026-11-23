@@ -69,6 +69,7 @@ class ReviewState(TypedDict, total=False):
     verify_ok: bool
     verify_summary: str  # טקסט למשתמשת
     new_failures: list[str]  # טסטים שעברו לפני התיקון ונכשלו אחריו
+    failed_after: list[str]  # כל הטסטים שנכשלו אחרי התיקון (להערכה)
     push_decision: str  # PUSH / NO_PUSH
 
     # --- תוצאה ---

@@ -1,0 +1,116 @@
+[
+  {
+    "id": "library_tracker",
+    "repo": "https://github.com/ChayaKoller/library_tracker",
+    "split": "dev",
+    "bugs": [
+      {
+        "id": "lt1",
+        "file": "loans.py",
+        "line": 13,
+        "type": "off-by-one",
+        "description": "book returned on due date counted as overdue; >= should be >",
+        "buggy": "    return today >= due",
+        "fixed": "    return today > due",
+        "failing_test": "tests/test_loans.py::test_not_overdue_on_due_date"
+      },
+      {
+        "id": "lt2",
+        "file": "loans.py",
+        "line": 23,
+        "type": "logic",
+        "description": "fee cap uses max instead of min",
+        "buggy": "    return max(days_late(due, today) * daily_rate, max_fee)",
+        "fixed": "    return min(days_late(due, today) * daily_rate, max_fee)",
+        "failing_test": "tests/test_loans.py::test_late_fee_small"
+      },
+      {
+        "id": "lt3",
+        "file": "members.py",
+        "line": 3,
+        "type": "none-handling",
+        "description": "member without email crashes instead of returning None",
+        "buggy": "    return member.get(\"email\").strip().lower()",
+        "fixed": "    email = member.get(\"email\")\n    return email.strip().lower() if email else None",
+        "failing_test": "tests/test_members.py::test_normalize_email_missing"
+      },
+      {
+        "id": "lt4",
+        "file": "text_tools.py",
+        "line": 5,
+        "type": "off-by-one",
+        "description": "result is max_len+3 chars; must keep room for '...'",
+        "buggy": "    return text[:max_len] + \"...\"",
+        "fixed": "    return text[:max_len - 3] + \"...\"",
+        "failing_test": "tests/test_text_tools.py::test_truncate_respects_max_len"
+      },
+      {
+        "id": "lt5",
+        "file": "text_tools.py",
+        "line": 10,
+        "type": "none-handling",
+        "description": "None text crashes instead of returning 0",
+        "buggy": "    return len(text.split())",
+        "fixed": "    return len(text.split()) if text else 0",
+        "failing_test": "tests/test_text_tools.py::test_word_count_missing"
+      },
+      {
+        "id": "lt6",
+        "file": "ratings.py",
+        "line": 3,
+        "type": "logic",
+        "description": "'>= 3' checked before '>= 4.5', so 'excellent' is unreachable",
+        "buggy": "    if avg >= 3:\n        return \"good\"\n    elif avg >= 4.5:\n        return \"excellent\"",
+        "fixed": "    if avg >= 4.5:\n        return \"excellent\"\n    elif avg >= 3:\n        return \"good\"",
+        "failing_test": "tests/test_ratings.py::test_stars_label"
+      }
+    ]
+  },
+  {
+    "id": "order_reports",
+    "repo": "https://github.com/ChayaKoller/order_reports",
+    "split": "dev",
+    "bugs": [
+      {
+        "id": "or1",
+        "file": "orders.py",
+        "line": 5,
+        "type": "none-handling",
+        "description": "order without discount_percent: None / 100 raises TypeError",
+        "buggy": "    return subtotal * (1 - discount / 100)",
+        "fixed": "    return subtotal * (1 - (discount or 0) / 100)",
+        "failing_test": null
+      },
+      {
+        "id": "or2",
+        "file": "orders.py",
+        "line": 10,
+        "type": "off-by-one",
+        "description": "returns n+1 orders instead of n",
+        "buggy": "    return orders[len(orders) - n - 1:]",
+        "fixed": "    return orders[len(orders) - n:]",
+        "failing_test": null
+      },
+      {
+        "id": "or3",
+        "file": "customers.py",
+        "line": 6,
+        "type": "logic",
+        "description": "docstring says AND, code uses or",
+        "buggy": "        if c[\"orders\"] >= min_orders or c[\"spent\"] >= min_spent",
+        "fixed": "        if c[\"orders\"] >= min_orders and c[\"spent\"] >= min_spent",
+        "failing_test": null
+      },
+      {
+        "id": "or4",
+        "file": "customers.py",
+        "line": 13,
+        "type": "none-handling",
+        "description": "customer without address crashes instead of 'UNKNOWN'",
+        "buggy": "    return address[\"city\"].upper()",
+        "fixed": "    if not address:\n        return \"UNKNOWN\"\n    return address[\"city\"].upper()",
+        "failing_test": null
+      }
+    ]
+  }
+]

@@ -10,12 +10,21 @@ Reviewer היא מחלקה כדי שבבדיקות אפשר להחליף אות�
 """
 from __future__ import annotations
 
+import time
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from core import config
 from core.state import Edit, Suspect
+
+# שגיאות זמניות של השרת: עומס (503) או מכסה לדקה (429). שווה לחכות ולנסות שוב
+_TEMPORARY = ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED", "overloaded")
+
+
+class LLMUnavailable(RuntimeError):
+    """המודל לא זמין גם אחרי כמה ניסיונות."""
+
 
 BugType = Literal["off_by_one", "none_handling", "logic"]
 
@@ -81,11 +90,39 @@ class Reviewer:
             temperature=config.LLM_TEMPERATURE,
             max_retries=config.LLM_MAX_RETRIES,
         )
-        self._find = model.with_structured_output(_SuspectsOut)
-        self._fix = model.with_structured_output(_EditsOut)
+        # include_raw: מקבלים גם את התשובה הגולמית, כדי לספור טוקנים (עלות)
+        self._find = model.with_structured_output(_SuspectsOut, include_raw=True)
+        self._fix = model.with_structured_output(_EditsOut, include_raw=True)
+        self.calls = 0
+        self.input_tokens = 0
+        self.output_tokens = 0
+
+    def _invoke(self, chain, prompt: str):
+        delay = config.LLM_RETRY_FIRST_DELAY
+        for attempt in range(1, config.LLM_BUSY_RETRIES + 1):
+            try:
+                out = chain.invoke(prompt)
+                break
+            except Exception as exc:  # noqa: BLE001 - בודקים לפי הטקסט אם השגיאה זמנית
+                if not any(code in str(exc) for code in _TEMPORARY):
+                    raise
+                if attempt == config.LLM_BUSY_RETRIES:
+                    raise LLMUnavailable(
+                        f"המודל {config.MODEL_NAME} עמוס או שנגמרה המכסה לדקה (ניסיתי {attempt} פעמים). "
+                        "לנסות שוב בעוד כמה דקות, או להחליף את MODEL_NAME ב-.env"
+                    ) from exc
+                time.sleep(delay)
+                delay *= 2
+        self.calls += 1
+        usage = getattr(out.get("raw"), "usage_metadata", None) or {}
+        self.input_tokens += usage.get("input_tokens", 0)
+        self.output_tokens += usage.get("output_tokens", 0)
+        if out.get("parsing_error"):
+            raise ValueError(f"המודל החזיר פלט שלא תואם למבנה: {out['parsing_error']}")
+        return out.get("parsed")
 
     def find_suspects(self, file: str, source: str) -> list[Suspect]:
-        out = self._find.invoke(_FIND_PROMPT.format(file=file, numbered=number_lines(source)))
+        out = self._invoke(self._find, _FIND_PROMPT.format(file=file, numbered=number_lines(source)))
         total = len(source.splitlines())
         result: list[Suspect] = []
         for s in out.suspects if out else []:
@@ -96,8 +133,8 @@ class Reviewer:
     def propose_fixes(self, file: str, source: str, suspects: list[Suspect], note: str = "") -> list[Edit]:
         bugs = "\n".join(f"- line {s['line']} ({s['bug_type']}): {s['reason']}" for s in suspects)
         note_text = f"\nThe reviewer rejected the previous fix with this note, follow it:\n{note}" if note else ""
-        out = self._fix.invoke(
-            _FIX_PROMPT.format(file=file, numbered=number_lines(source), bugs=bugs, note=note_text)
+        out = self._invoke(
+            self._fix, _FIX_PROMPT.format(file=file, numbered=number_lines(source), bugs=bugs, note=note_text)
         )
         return [
             {

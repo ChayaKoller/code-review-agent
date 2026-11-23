@@ -48,3 +48,10 @@
 - **baseline: מריצים טסטים לפני התיקון; "נשבר" = נכשל אחרי ועבר לפני** | לא להאשים את התיקון בטסטים שנכשלו כבר | מחיר: עוד הרצת Docker.
 - **זרימה: prepare → select → find_suspects → baseline → propose_fix → review_fix (interrupt 1) → apply_fix (כתיבה להעתק + commit בענף) → verify_fix → review_push (interrupt 2) → publish → finish (תמיד מוחק את ההעתק)** | הסוכן לא נוגע במקור; רק publish שולח החוצה.
 - **publish: רק ענף עם קידומת `cra/fix-`, בלי force, refspec מפורש; כישלון (אין הרשאה) מחזיר הודעה וה-diff נשמר ב-`cra_fix.patch`** | ריפו של אחרים: אין push, יש diff | פתוח: לאשר עם חיה.
+- **ריפוזיטוריז לדוגמה (נפרדים מהפרויקט, ב-GitHub של חיה): `library_tracker` (pytest + requirements עם python-dateutil, 6 באגים: 2 off-by-one, 2 None, 2 לוגיקה; לפני תיקון 7/17 טסטים נכשלים, אחרי 17/17 עוברים) ו-`order_reports` (stdlib, בלי טסטים, 4 באגים). ground truth ו-GUIDE.md מחוץ לריפו (`sample_repos/` בקבצי הפרויקט)** | בדיקת הסוכן מקצה לקצה: clone מ-URL, שני מסלולי אימות, push לענף בריפו שלה; 6 הבאגים של library_tracker מועמדים ל-dev | נדחה: ground truth בתוך הריפו (הסוכן היה רואה את התשובות). לא מספיק לבד לדאטהסט (חסרים כ-15 באגים).
+
+## שלב 5: הערכה (23.11.2026)
+
+- **dev set = library_tracker (6 באגים, עם טסטים) + order_reports (4 באגים, בלי טסטים), ב-`eval/datasets/dev.json` (ground truth מחוץ לריפוזיטוריז הנבדקים)** | יש כבר באגים מאומתים | פתוח: test set אמיתי (BugsInPy).
+- **הערכה: הגרף רץ בלי עצירות (approve, ואחר כך no_push), אף פעם לא דוחף. מדדים: recall ו-precision ב-±3 ובשורה מדויקת, false positives, שיעור תיקון (רק בריפו עם טסטים: נכשל לפני, עובר אחרי, לא נשבר כלום, לא שונו קבצי טסט), זמן, קריאות וטוקנים** | עלות מחושבת מטוקנים; מחיר לטוקן נבדק בחיפוש ולא נכתב בקוד.
+- **LangSmith: דאטהסט `cra-dev` נוצר פעם אחת מ-dev.json; ניסוי לפי `--name` (before/after) ושם המודל; max_concurrency=1** | מגבלות השכבה החינמית.
