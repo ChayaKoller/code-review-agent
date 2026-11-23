@@ -17,13 +17,22 @@ PUSH = "push"
 NO_PUSH = "no_push"
 
 
-class Suspect(TypedDict):
-    """חשד לבאג אחד."""
-
+class _SuspectBase(TypedDict):
     file: str  # נתיב יחסי לשורש הריפו, למשל "app/utils.py"
     line: int  # מספר שורה, מתחילים לספור מ-1
     bug_type: str  # off_by_one / none_handling / logic
     reason: str  # הסבר קצר של המודל
+
+
+class Suspect(_SuspectBase, total=False):
+    """חשד לבאג אחד. השדות כאן אופציונליים (נוספו בשלב 6)."""
+
+    confidence: int  # 1-5 מהמודל
+    failing_input: str  # מהמאמת: קלט שמפיל את הקוד
+    expected: str
+    actual: str
+    evidence: str  # tests_confirmed / unproven: מה הוכיח את החשד
+    rejected_because: str  # רק ברשימת הנדחים: למה החשד נזרק
 
 
 class Edit(TypedDict):
@@ -53,12 +62,18 @@ class ReviewState(TypedDict, total=False):
     # --- בחירה ואיתור ---
     files: list[str]  # הקבצים שנבחרו לסקירה (נתיבים יחסיים)
     skipped: dict[str, str]  # קבצים שדולגו -> הסיבה
-    suspects: list[Suspect]  # החשודים, מכל הקבצים
+    raw_suspects: list[Suspect]  # כל מה שהמודל החזיר, לפני הסינון (לניתוח ולמדידה)
+    suspects: list[Suspect]  # החשודים שעברו את הסינון: רק אותם רואה המשתמשת
+    rejected_suspects: list[Suspect]  # חשדות שנזרקו, עם rejected_because
+    doubtful_suspects: list[Suspect]  # המאמת זרק אותם; אם יש טסטים, הם יכולים לחזור רק דרך tests_confirmed
+    doubtful_files: list[str]  # קבצים שהתיקון שלהם הוצע מחשד doubtful
     failing_tests: list[str]  # טסטים שנכשלו כבר לפני התיקון (כדי לא להאשים בהם את התיקון)
+    baseline_broken: bool  # הטסטים לא רצו ב-baseline (ספריות חסרות, timeout): לא מסננים לפיהם
 
     # --- תיקון ואישור ראשון ---
     fixes: list[Edit]
     diff: str  # ה-diff שמוצג למשתמשת
+    screening: list[dict]  # תוצאת screen_fixes לכל קובץ: status, fixed_tests, new_failures, attempts
     decision: str  # APPROVE / REJECT / REJECT_WITH_NOTE
     rejection_note: str
     attempts: int  # כמה פעמים הוצע תיקון

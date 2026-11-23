@@ -1,8 +1,11 @@
 """core/nodes.py: הצמתים של הגרף. כל צומת מקבל State ומחזיר רק את השדות שהוא משנה.
 
 הסדר (הגרף עצמו ב-graph.py):
-prepare -> select -> find_suspects -> baseline -> propose_fix -> review_fix (interrupt 1)
+prepare -> select -> find_suspects -> baseline -> propose_fix -> screen_fixes -> review_fix (interrupt 1)
 -> apply_fix -> verify_fix -> review_push (interrupt 2) -> publish -> finish
+
+שלב 6: find_suspects מסנן (איחוד, סף ביטחון, מאמת, תקרה), ו-screen_fixes בודק כל תיקון
+לבד מול הטסטים לפני שהמשתמשת רואה אותו.
 
 הסוכן (המודל) רק קורא קוד ומחזיר חשדות ותיקונים. את הכתיבה להעתק, ה-commit
 וה-push עושה קוד רגיל, ורק אחרי אישור. המקור לא נפתח לכתיבה בשום שלב.
@@ -18,7 +21,8 @@ from pathlib import Path
 from langgraph.types import interrupt
 
 from core import config, git_ops, publish
-from core.docker_runner import DockerRunner
+from core.docker_runner import DockerRunner, TestRun
+from core.filtering import dedupe, rank, split_by_confidence
 from core.llm import Reviewer
 from core.sandbox import Sandbox, remove_sandbox
 from core.selection import select_files
@@ -131,12 +135,39 @@ def select(state: ReviewState, deps: Deps) -> dict:
     return {"files": sel.selected, "skipped": sel.skipped}
 
 
+def _rejected(items: list[dict], why: str) -> list[dict]:
+    return [{**s, "rejected_because": why} for s in items]
+
+
 def find_suspects(state: ReviewState, deps: Deps) -> dict:
-    """קריאה אחת למודל לכל קובץ. המודל מקבל רק את הקוד."""
-    suspects = []
+    """1. קריאה אחת למודל לכל קובץ (כל הקובץ, עם ציון ביטחון).
+    2. סינון בקוד: איחוד כפילויות, סף ביטחון, דירוג.
+    3. מאמת: קריאה נפרדת לכל חשד (רק הפונקציה). חשד בלי קלט מפיל נזרק.
+    4. תקרה של MAX_SUSPECTS.
+    חשדות שהמאמת זרק (בביטחון מעל הסף) נשמרים גם ב-doubtful_suspects: אם יש טסטים, הם מקבלים
+    הזדמנות ב-screen_fixes, ונשארים רק אם הטסטים מאשרים (s6try2: המאמת זרק את הבאג של thefuck_25)."""
+    raw = []
     for rel in state["files"]:
-        suspects.extend(deps.reviewer.find_suspects(rel, _read(state, rel)))
-    return {"suspects": suspects}
+        raw.extend(deps.reviewer.find_suspects(rel, _read(state, rel)))
+    unique = dedupe(raw)
+    rejected = _rejected([s for s in raw if not any(s is u for u in unique)], "כפילות של חשד קרוב")
+    above, below = split_by_confidence(unique, config.SUSPECT_MIN_CONFIDENCE)
+    rejected += _rejected(below, "ביטחון נמוך")
+    ranked = rank(above)
+    rejected += _rejected(ranked[config.MAX_SUSPECTS_TO_VERIFY :], "מעבר לתקרת האימות")
+    verified, doubtful = [], []
+    for s in ranked[: config.MAX_SUSPECTS_TO_VERIFY]:
+        verdict = deps.reviewer.check_suspect(_read(state, s["file"]), s)
+        checked = {**s, "failing_input": verdict["failing_input"], "expected": verdict["expected"],
+                   "actual": verdict["actual"]}  # fmt: skip
+        if verdict["is_bug"]:
+            verified.append(checked)
+        else:
+            rejected += _rejected([checked], "המאמת לא מצא קלט שמפיל את הקוד")
+            doubtful.append(checked)
+    rejected += _rejected(verified[config.MAX_SUSPECTS :], "מעבר לתקרת החשדות")
+    return {"raw_suspects": raw, "suspects": verified[: config.MAX_SUSPECTS], "rejected_suspects": rejected,
+            "doubtful_suspects": doubtful[: config.MAX_DOUBTFUL]}  # fmt: skip
 
 
 def baseline(state: ReviewState, deps: Deps) -> dict:
@@ -144,23 +175,181 @@ def baseline(state: ReviewState, deps: Deps) -> dict:
     if not state.get("has_tests"):
         return {"failing_tests": []}
     run = deps.runner.run_tests(state["sandbox_path"], extra_packages=deps.extra_packages)
-    return {"failing_tests": run.failed}
+    broken = run.timed_out or run.no_tests or bool(run.missing_modules)
+    return {"failing_tests": run.failed, "baseline_broken": broken}
 
 
 def propose_fix(state: ReviewState, deps: Deps) -> dict:
-    """המודל מציע תיקונים לכל החשדות. התיקון עוד לא נכתב לדיסק: רק diff להצגה."""
+    """המודל מציע תיקון לכל קובץ שיש בו חשדות. התיקון עוד לא נכתב לדיסק: רק diff להצגה.
+    תיקון לא תקין (טווח שורות שגוי, חפיפה) של קובץ אחד לא מפיל את כל הריצה: הקובץ מדולג."""
     note = state.get("rejection_note", "") if state.get("decision") == REJECT_WITH_NOTE else ""
     fixes: list[Edit] = []
     diffs = []
-    for rel, items in _by_file(state["suspects"]).items():
+    screening = []
+    groups = _by_file(state["suspects"])
+    doubtful_files = []
+    if state.get("has_tests") and _tests_usable(state):  # רק הטסטים יכולים "להציל" חשד שהמאמת זרק
+        for rel, items in _by_file(state.get("doubtful_suspects", [])).items():
+            if rel not in groups:
+                groups[rel] = items
+                doubtful_files.append(rel)
+    for rel, items in groups.items():
         before = _read(state, rel)
         edits = deps.reviewer.propose_fixes(rel, before, items, note)
         if not edits:
             continue
-        after = apply_edits(before, edits)  # בודק גם שהתיקון תקין
+        try:
+            after = apply_edits(before, edits)  # בודק גם שהתיקון תקין
+        except EditError as exc:
+            screening.append({"file": rel, "status": "invalid_edit", "detail": str(exc), "attempts": 1})
+            continue
         fixes.extend(edits)
         diffs.append(make_diff(rel, before, after))
-    return {"fixes": fixes, "diff": "".join(diffs), "attempts": state.get("attempts", 0) + 1}
+    return {"fixes": fixes, "diff": "".join(diffs), "screening": screening, "doubtful_files": doubtful_files,
+            "attempts": state.get("attempts", 0) + 1}  # fmt: skip
+
+
+# ------------------------------------------------------------ screen_fixes
+
+CONFIRMED = "tests_confirmed"  # התיקון גרם לטסט שנכשל לעבור, ולא שבר כלום
+UNPROVEN = "unproven"  # לא שבר כלום, אבל גם לא תיקן טסט (או שאין טסטים)
+BROKE = "broke_tests"  # שבר טסטים שעברו לפני (גם אחרי ניסיון שני)
+NO_COMPILE = "syntax_error"
+
+
+def failure_excerpt(output: str, test_ids: list[str], limit: int | None = None) -> str:
+    """הקטע מפלט pytest שמתאר את הכשל הראשון: מהכותרת '___ test_name ___' שלו.
+    אם אין כותרת כזו (למשל שגיאת collection): סוף הפלט."""
+    limit = limit or config.FAILURE_FEEDBACK_CHARS
+    for test_id in test_ids:
+        name = test_id.split("::")[-1].split("[")[0]
+        for marker in (f"_ {name}[", f"_ {name} _"):
+            idx = output.find(marker)
+            if idx != -1:
+                start = output.rfind("\n", 0, idx) + 1
+                return output[start : start + limit]
+    return output[-limit:]
+
+
+def _try_fix(state: ReviewState, deps: Deps, rel: str, before: str, after: str, can_test: bool) -> dict:
+    """כותב את התיקון של קובץ אחד להעתק, בודק, ומחזיר את הקובץ למצבו. תמיד מחזיר."""
+    path = Path(state["sandbox_path"]) / rel
+    path.write_text(after, encoding="utf-8")
+    try:
+        if not can_test:
+            comp = deps.runner.check_compile(state["sandbox_path"], [rel])
+            return {"status": UNPROVEN if comp.ok else NO_COMPILE, "fixed_tests": [], "new_failures": [],
+                    "output": "" if comp.ok else str(comp.errors)}  # fmt: skip
+        run: TestRun = deps.runner.run_tests(state["sandbox_path"], extra_packages=deps.extra_packages)
+    finally:
+        path.write_text(before, encoding="utf-8")
+    baseline = set(state.get("failing_tests", []))
+    if run.timed_out:
+        return {"status": BROKE, "fixed_tests": [], "new_failures": ["timeout"], "output": run.output}
+    after_failed = set(run.failed)
+    new = sorted(after_failed - baseline)
+    fixed = sorted(baseline - after_failed)
+    if new:
+        return {"status": BROKE, "fixed_tests": [], "new_failures": new, "output": run.output}
+    return {"status": CONFIRMED if fixed else UNPROVEN, "fixed_tests": fixed, "new_failures": [], "output": run.output}
+
+
+def related_tests(rel: str, tests: list[str]) -> list[str]:
+    """טסטים שנכשלו ב-baseline ושייכים לקובץ: לפי השם המקובל test_<שם הקובץ>.py.
+    'thefuck/rules/mkdir_p.py' -> 'tests/rules/test_mkdir_p.py::...'"""
+    name = f"test_{Path(rel).stem}.py"
+    return [t for t in tests if t.split("::")[0].split("/")[-1] == name]
+
+
+_RANK = {CONFIRMED: 3, UNPROVEN: 2, NO_COMPILE: 1, BROKE: 0}
+
+
+def _feedback(result: dict, still_failing: list[str], edits: list[Edit]) -> str:
+    """המשוב לניסיון הבא: מה קרה, פלט הטסט, והתיקון הקודם (המודל לא זוכר אותו)."""
+    previous = "\n".join(f"lines {e['start_line']}-{e['end_line']}:\n{e['new_code']}" for e in edits)
+    if result["status"] == BROKE:
+        head = "Your previous fix broke tests that passed before."
+        tests = result["new_failures"]
+    else:
+        head = "Your previous fix did not make this failing test pass."
+        tests = still_failing
+    return f"{head}\nPrevious fix:\n{previous}\nTest output:\n{failure_excerpt(result['output'], tests)}"
+
+
+def screen_fixes(state: ReviewState, deps: Deps) -> dict:
+    """בודק כל תיקון לבד (קובץ אחד בכל פעם) לפני שהמשתמשת רואה אותו.
+
+    לבד, כי כשמריצים את כל התיקונים יחד לא יודעים מי שבר ומי תיקן (ב-before: תיקון אחד
+    בקובץ נקי שבר טסט, וזה "הסתיר" גם תיקון נכון).
+    - שבר טסט: ניסיון נוסף עם פלט הכשל (FIX_RETRIES).
+    - לא שבר, אבל טסט של אותו קובץ שנכשל ב-baseline עדיין נכשל: גם כן ניסיון נוסף עם פלט הטסט
+      (s6try1: ב-thefuck_1 הבאג נמצא והתיקון לא תיקן, והטסט הכשל היה שם ולא השתמשנו בו).
+    - נשמר הניסיון הטוב ביותר: אושר בטסטים > לא הוכח > שבר.
+    - אם יש תיקונים שאושרו בטסטים, רק הם נשארים. אחרת נשארים אלה שלא שברו (לא הוכחו).
+    בלי טסטים: רק בדיקת קומפילציה לכל קובץ."""
+    can_test = bool(state.get("has_tests")) and _tests_usable(state)
+    note = state.get("rejection_note", "") if state.get("decision") == REJECT_WITH_NOTE else ""
+    doubtful_files = set(state.get("doubtful_files", []))
+    all_suspects = state["suspects"] + [s for s in state.get("doubtful_suspects", []) if s["file"] in doubtful_files]
+    suspects_by_file = _by_file(all_suspects)
+    report = list(state.get("screening", []))
+    candidates: dict[str, tuple[list[Edit], str]] = {}  # קובץ -> (תיקונים, מצב)
+    for rel, edits in _by_file(state["fixes"]).items():
+        before = _read(state, rel)
+        related = related_tests(rel, state.get("failing_tests", [])) if can_test else []
+        attempt = 1
+        result = _try_fix(state, deps, rel, before, apply_edits(before, edits), can_test)
+        best = (result, edits)
+        while attempt <= config.FIX_RETRIES:
+            still = [t for t in related if t not in result["fixed_tests"]]
+            if not (result["status"] == BROKE or (result["status"] == UNPROVEN and still)):
+                break
+            attempt += 1
+            feedback = _feedback(result, still, edits)
+            retry = deps.reviewer.propose_fixes(rel, before, suspects_by_file.get(rel, []), note, feedback)
+            if not retry:
+                break
+            try:
+                after = apply_edits(before, retry)
+            except EditError:
+                break
+            edits = retry
+            result = _try_fix(state, deps, rel, before, after, can_test)
+            if _RANK[result["status"]] > _RANK[best[0]["status"]]:
+                best = (result, edits)
+        result, edits = best
+        report.append({"file": rel, "status": result["status"], "fixed_tests": result["fixed_tests"],
+                       "new_failures": result["new_failures"][:5], "attempts": attempt})  # fmt: skip
+        if result["status"] == CONFIRMED or (result["status"] == UNPROVEN and rel not in doubtful_files):
+            candidates[rel] = (edits, result["status"])  # חשד שהמאמת זרק נשאר רק אם הטסטים אישרו
+
+    confirmed = {rel for rel, (_, st) in candidates.items() if st == CONFIRMED}
+    keep = confirmed or set(candidates)
+    fixes: list[Edit] = []
+    diffs = []
+    for rel in sorted(keep):
+        edits = candidates[rel][0]
+        before = _read(state, rel)
+        fixes.extend(edits)
+        diffs.append(make_diff(rel, before, apply_edits(before, edits)))
+    status = {rel: st for rel, (_, st) in candidates.items()}
+    kept_suspects = [{**s, "evidence": status[s["file"]]} for s in all_suspects if s["file"] in keep]
+    dropped = [s for s in state["suspects"] if s["file"] not in keep]
+    rescued = {(s["file"], s["line"]) for s in kept_suspects}
+    why = {r["file"]: r["status"] for r in report}
+    rejected = [r for r in state.get("rejected_suspects", []) if (r["file"], r["line"]) not in rescued] + [
+        {**s, "rejected_because": f"התיקון נפסל בבדיקה: {why.get(s['file'], 'לא הוצע תיקון')}"
+         if s["file"] not in candidates else "תיקון אחר אושר בטסטים, וזה לא"}
+        for s in dropped
+    ]  # fmt: skip
+    # doubtful מתרוקן: בלולאת reject_with_note לא מציעים שוב תיקון לחשד שהטסטים לא אישרו
+    return {"fixes": fixes, "diff": "".join(diffs), "suspects": kept_suspects, "doubtful_suspects": [],
+            "doubtful_files": [], "rejected_suspects": rejected, "screening": report}  # fmt: skip
+
+
+def _tests_usable(state: ReviewState) -> bool:
+    """baseline רץ ונתן תוצאה. אם הטסטים לא רצו בכלל (ספריות חסרות), אין טעם לסנן לפיהם."""
+    return not state.get("baseline_broken", False)
 
 
 def review_fix(state: ReviewState, deps: Deps) -> dict:
@@ -172,6 +361,7 @@ def review_fix(state: ReviewState, deps: Deps) -> dict:
             "suspects": state["suspects"],
             "fixes": state["fixes"],
             "diff": state["diff"],
+            "screening": state.get("screening", []),  # מה הטסטים אמרו על כל תיקון
             "attempt": state["attempts"],
             "max_attempts": config.MAX_REJECT_ATTEMPTS,
         }
@@ -256,10 +446,12 @@ def finish(state: ReviewState, deps: Deps) -> dict:
         remove_sandbox(state["work_dir"])
     if state.get("result"):
         return {}
-    if not state.get("suspects"):
+    if not state.get("suspects") and state.get("rejected_suspects") and not state.get("screening"):
+        result = f"המודל העלה {len(state['rejected_suspects'])} חשדות, וכולם נזרקו בסינון. לא נמצאו באגים."
+    elif not state.get("suspects") and not state.get("screening"):
         result = "לא נמצאו חשדות לבאגים."
     elif not state.get("fixes"):
-        result = "נמצאו חשדות, אבל המודל לא הציע תיקון."
+        result = "נמצאו חשדות, אבל אף תיקון לא עבר את הבדיקה (או שלא הוצע תיקון)."
     elif state.get("decision") != APPROVE:
         result = "התיקון נדחה. לא נכתב שום דבר."
     elif not state.get("is_git_repo"):

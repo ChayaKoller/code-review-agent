@@ -33,11 +33,25 @@ def write_report(values: dict, source: str, reviewer: Reviewer, error: str = "")
     lines += ["", "## קבצים", f"- נסקרו: {', '.join(values.get('files', [])) or 'אין'}"]
     for name, why in (values.get("skipped") or {}).items():
         lines.append(f"- דולג: `{name}` ({why})")
-    lines += ["", "## חשדות (מה המודל מצא)"]
+    raw = values.get("raw_suspects") or []
+    lines += ["", f"## חשדות שעברו את הסינון ({len(values.get('suspects') or [])} מתוך {len(raw)} שהמודל העלה)"]
     for x in values.get("suspects") or []:
-        lines.append(f"- `{x['file']}:{x['line']}` [{x['bug_type']}] {x['reason']}")
+        lines.append(f"- `{x['file']}:{x['line']}` [{x['bug_type']}, ביטחון {x.get('confidence', '-')}, "
+                     f"{x.get('evidence', '-')}] {x['reason']}")  # fmt: skip
+        if x.get("failing_input"):
+            lines.append(f"  - קלט מפיל: `{x['failing_input']}` | צפוי: {x.get('expected')} | בפועל: {x.get('actual')}")
     if not values.get("suspects"):
         lines.append("- אין")
+    if values.get("rejected_suspects"):
+        lines += ["", "## חשדות שנזרקו"]
+        for x in values["rejected_suspects"]:
+            lines.append(f"- `{x['file']}:{x['line']}` ({x.get('rejected_because', '')}) {x['reason']}")
+    if values.get("screening"):
+        lines += ["", "## בדיקת כל תיקון לבד (screen_fixes)"]
+        for r in values["screening"]:
+            extra = f", תיקן: {', '.join(r.get('fixed_tests', [])[:3])}" if r.get("fixed_tests") else ""
+            extra += f", שבר: {', '.join(r.get('new_failures', [])[:3])}" if r.get("new_failures") else ""
+            lines.append(f"- `{r['file']}`: {r['status']} (ניסיונות: {r.get('attempts', 1)}){extra}")
     if values.get("fixes"):
         lines += ["", "## תיקונים (מה המודל הציע)"]
         for e in values["fixes"]:
@@ -63,7 +77,9 @@ def write_report(values: dict, source: str, reviewer: Reviewer, error: str = "")
 def _ask_fix(info: dict) -> dict:
     print(f"\n=== חשדות לבאגים (ניסיון {info['attempt']} מתוך {info['max_attempts']}) ===")
     for s in info["suspects"]:
-        print(f"  {s['file']}:{s['line']} [{s['bug_type']}] {s['reason']}")
+        print(f"  {s['file']}:{s['line']} [{s['bug_type']}, {s.get('evidence', '-')}] {s['reason']}")
+    for r in info.get("screening", []):
+        print(f"  בדיקה: {r['file']} -> {r['status']}")
     print("\n=== התיקון המוצע ===")
     print(info["diff"])
     while True:

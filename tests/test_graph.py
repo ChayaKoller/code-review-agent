@@ -42,18 +42,26 @@ def make_git_repo(tmp_path: Path, buggy=True, with_tests=True) -> tuple[Path, Pa
 class FakeReviewer:
     """מודל מדומה: מוצא את באג ה-pagination ומתקן אותו."""
 
-    def __init__(self, find=True, fix=True):
-        self.find, self.fix = find, fix
+    def __init__(self, find=True, fix=True, confirm=True):
+        self.find, self.fix, self.confirm = find, fix, confirm
         self.notes: list[str] = []
+        self.failures: list[str] = []  # פלט הכשל שהגיע בניסיון השני (screen_fixes)
+        self.checked: list[dict] = []
 
     def find_suspects(self, file, source):
         if not self.find or "page * size" not in source:
             return []
         line = source.splitlines().index("    start = page * size") + 1
-        return [{"file": file, "line": line, "bug_type": "off_by_one", "reason": "page is 1-based"}]
+        return [{"file": file, "line": line, "bug_type": "off_by_one", "reason": "page is 1-based", "confidence": 5}]
 
-    def propose_fixes(self, file, source, suspects, note=""):
+    def check_suspect(self, source, suspect):
+        self.checked.append(suspect)
+        return {"is_bug": self.confirm, "failing_input": "get_page([1,2,3,4], 1, 2)" if self.confirm else "",
+                "expected": "[1, 2]", "actual": "[3, 4]"}  # fmt: skip
+
+    def propose_fixes(self, file, source, suspects, note="", failure=""):
         self.notes.append(note)
+        self.failures.append(failure)
         if not self.fix:
             return []
         s = suspects[0]

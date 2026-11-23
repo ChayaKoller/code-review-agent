@@ -122,3 +122,30 @@ def test_python_version_is_restored():
     with python_version("3.8"):
         assert config.DOCKER_PYTHON_VERSION == "3.8"
     assert config.DOCKER_PYTHON_VERSION == old
+
+
+def test_run_local_saves_each_item_and_resumes(tmp_path, monkeypatch, capsys):
+    import json
+
+    import eval.run_eval as re_
+
+    monkeypatch.setattr(re_, "RESULTS_DIR", tmp_path)
+    calls = []
+
+    def fake_run_item(item):
+        calls.append(item["id"])
+        if item["id"] == "b":
+            raise RuntimeError("quota")
+        return {"suspects": [], "fixes": [], "seconds": 0, "input_tokens": 0, "output_tokens": 0}
+
+    monkeypatch.setattr(re_, "run_item", fake_run_item)
+    items = [{"id": x, "bugs": [{"id": x, "file": "a.py", "line": 1, "failing_test": None}]} for x in "abc"]
+    path = re_.run_local(items, "t")
+    assert [r["id"] for r in json.loads(path.read_text(encoding="utf-8"))] == ["a"]  # נשמר לפני הנפילה
+    assert "--resume" in capsys.readouterr().out
+    calls.clear()
+    monkeypatch.setattr(re_, "run_item", lambda item: calls.append(item["id"]) or {
+        "suspects": [], "fixes": [], "seconds": 0, "input_tokens": 0, "output_tokens": 0})  # fmt: skip
+    re_.run_local(items, "t", resume=True)
+    assert calls == ["b", "c"]  # a דולג
+    assert [r["id"] for r in json.loads(path.read_text(encoding="utf-8"))] == ["a", "b", "c"]

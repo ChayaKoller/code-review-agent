@@ -64,8 +64,14 @@ def score(result: dict, bugs: list[dict]) -> dict:
     exact = detection(suspects, bugs, 0)
     fixed = fixed_bugs(bugs, result)
     testable = [b for b in bugs if b.get("failing_test")]
+    raw = result.get("raw_suspects")
+    raw = suspects if raw is None else raw  # תוצאות ישנות (לפני שלב 6) בלי raw_suspects
+    raw_near = detection(raw, bugs, TOLERANCE)
     return {
         "bugs": len(bugs),
+        "raw_suspects": len(raw),  # לפני הסינון: מראה כמה הסינון זרק
+        "raw_recall": raw_near["recall"],  # אם raw_recall > recall: הסינון זרק באג אמיתי
+        "raw_precision": raw_near["precision"],
         "suspects": len(suspects),
         "recall": near["recall"],
         "precision": near["precision"],

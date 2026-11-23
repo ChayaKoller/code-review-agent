@@ -1,0 +1,346 @@
+[
+  {
+    "id": "thefuck_25",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 1.0,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "thefuck_25"
+      ],
+      "fixed": [
+        "thefuck_25"
+      ],
+      "fix_rate": 1.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 8,
+          "bug_type": "none_handling",
+          "reason": "get_close_matches can return an empty list if no matches are found, and bool() on an empty list is False, but the logic assumes the command script is always splitable.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "command.script.split(' ') might fail or produce unexpected results if the command script is empty or contains only whitespace.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the path does not contain a slash, rfind returns -1, causing the directory slice to be incorrect.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The replacement logic does not handle cases where the URL already starts with http:// or https://, potentially resulting in invalid URLs like open http://http://example.com.",
+          "confidence": 3
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 8,
+          "bug_type": "none_handling",
+          "reason": "get_close_matches can return an empty list if no matches are found, and bool() on an empty list is False, but the logic assumes the command script is always splitable.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "command.script.split(' ') might fail or produce unexpected results if the command script is empty or contains only whitespace.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The replacement logic does not handle cases where the URL already starts with http:// or https://, potentially resulting in invalid URLs like open http://http://example.com.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the path does not contain a slash, rfind returns -1, causing the directory slice to be incorrect.",
+          "confidence": 4,
+          "failing_input": "get_new_command(Command('cat foo', 'cat: foo: No such file or directory'), None)",
+          "expected": "'mkdir -p . && cat foo' (or not attempting to create directory 'fo')",
+          "actual": "'mkdir -p fo && cat foo'",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs",
+            "tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin/hdfs"
+          ],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "start_line": 13,
+          "end_line": 13,
+          "new_code": "    return re.sub(r'^(.*mkdir)(?! -p)(.*)', r'\\1 -p\\2', command.script)",
+          "explanation": "Update the regex to correctly insert -p after mkdir commands even when preceded by paths or other commands."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs",
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin/hdfs",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "failed_after": [
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 149.6,
+      "llm_calls": 11,
+      "input_tokens": 3808,
+      "output_tokens": 5442
+    }
+  },
+  {
+    "id": "thefuck_27",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 1.0,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "thefuck_27"
+      ],
+      "fixed": [
+        "thefuck_27"
+      ],
+      "fix_rate": 1.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The slice [5:] assumes the command starts with 'open ' (5 characters), but it could start with 'xdg-open ', 'gnome-open ', etc., leading to an incorrect URL.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/pacman.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The format string expects two arguments but three are provided, causing a runtime error.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/pacman_not_found.py",
+          "line": 21,
+          "bug_type": "none_handling",
+          "reason": "get_pkgfile(pgr) may return None if no package is found, which would cause replace_command to fail or produce incorrect results.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4,
+          "rejected_because": "כפילות של חשד קרוב"
+        },
+        {
+          "file": "thefuck/rules/pacman.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The format string expects two arguments but three are provided, causing a runtime error.",
+          "confidence": 5,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/pacman_not_found.py",
+          "line": 21,
+          "bug_type": "none_handling",
+          "reason": "get_pkgfile(pgr) may return None if no package is found, which would cause replace_command to fail or produce incorrect results.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4,
+          "failing_input": "Command(script='pip FOO', stderr='ERROR: unknown command \"FOO\"\\nmaybe you meant \"help\"')",
+          "expected": "'pip help'",
+          "actual": "raises IndexError: list index out of range",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/open.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/rules/test_open.py::test_get_new_command[command6-xdg-open",
+            "tests/rules/test_open.py::test_get_new_command[command7-gnome-open",
+            "tests/rules/test_open.py::test_get_new_command[command8-kde-open"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/pacman.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/pacman_not_found.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The slice [5:] assumes the command starts with 'open ' (5 characters), but it could start with 'xdg-open ', 'gnome-open ', etc., leading to an incorrect URL.",
+          "confidence": 5,
+          "failing_input": "Command(script='xdg-open google.com', output='')",
+          "expected": "'xdg-open http://google.com'",
+          "actual": "'open http://pen google.com'",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/open.py",
+          "start_line": 26,
+          "end_line": 26,
+          "new_code": "    return '{} http://{}'.format(command.script.split(' ', 1)[0], command.script.split(' ', 1)[1])",
+          "explanation": "Use the original command name instead of hardcoding 'open' and correctly split the script to extract the URL."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_open.py::test_get_new_command[command6-xdg-open",
+        "tests/rules/test_open.py::test_get_new_command[command7-gnome-open",
+        "tests/rules/test_open.py::test_get_new_command[command8-kde-open",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "failed_after": [
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 169.3,
+      "llm_calls": 13,
+      "input_tokens": 4550,
+      "output_tokens": 6356
+    }
+  }
+]

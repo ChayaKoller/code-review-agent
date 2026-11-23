@@ -4,7 +4,9 @@ START -> prepare -> select -> find_suspects
   find_suspects --(אין חשדות)--> finish
   find_suspects --(יש)--> baseline -> propose_fix
   propose_fix --(אין תיקון)--> finish
-  propose_fix --(יש)--> review_fix                       [interrupt 1: על ה-diff]
+  propose_fix --(יש)--> screen_fixes                     [כל תיקון לבד מול הטסטים; שבר -> ניסיון שני]
+  screen_fixes --(לא נשאר תיקון)--> finish
+  screen_fixes --(נשאר)--> review_fix                    [interrupt 1: על ה-diff]
   review_fix --approve--> apply_fix -> verify_fix
   review_fix --reject_with_note (ונשארו ניסיונות)--> propose_fix   [הלולאה]
   review_fix --reject--> finish
@@ -25,10 +27,14 @@ from core.state import APPROVE, PUSH, REJECT_WITH_NOTE, ReviewState
 
 
 def route_after_find(state: ReviewState) -> str:
-    return "baseline" if state.get("suspects") else "finish"
+    return "baseline" if state.get("suspects") or state.get("doubtful_suspects") else "finish"
 
 
 def route_after_propose(state: ReviewState) -> str:
+    return "screen_fixes" if state.get("fixes") else "finish"
+
+
+def route_after_screen(state: ReviewState) -> str:
     return "review_fix" if state.get("fixes") else "finish"
 
 
@@ -54,6 +60,7 @@ _NODES = {
     "find_suspects": nodes.find_suspects,
     "baseline": nodes.baseline,
     "propose_fix": nodes.propose_fix,
+    "screen_fixes": nodes.screen_fixes,
     "review_fix": nodes.review_fix,
     "apply_fix": nodes.apply_fix,
     "verify_fix": nodes.verify_fix,
@@ -75,7 +82,8 @@ def build_graph(deps: Deps, checkpointer=None):
     builder.add_edge("select", "find_suspects")
     builder.add_conditional_edges("find_suspects", route_after_find, ["baseline", "finish"])
     builder.add_edge("baseline", "propose_fix")
-    builder.add_conditional_edges("propose_fix", route_after_propose, ["review_fix", "finish"])
+    builder.add_conditional_edges("propose_fix", route_after_propose, ["screen_fixes", "finish"])
+    builder.add_conditional_edges("screen_fixes", route_after_screen, ["review_fix", "finish"])
     builder.add_conditional_edges(
         "review_fix", route_after_review, ["apply_fix", "propose_fix", "finish"]
     )

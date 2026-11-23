@@ -1,0 +1,1673 @@
+[
+  {
+    "id": "thefuck_25",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 1.0,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "thefuck_25"
+      ],
+      "fixed": [
+        "thefuck_25"
+      ],
+      "fix_rate": 1.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 8,
+          "bug_type": "none_handling",
+          "reason": "get_close_matches can return an empty list if no matches are found, and bool() on an empty list is False, but the logic assumes the command script is always splitable.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "command.script.split(' ') might fail or produce unexpected results if the command script is empty or contains only whitespace.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the path does not contain a slash, rfind returns -1, causing the directory slice to be incorrect.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The replacement logic does not handle cases where the URL already starts with http:// or https://, potentially resulting in invalid URLs like open http://http://example.com.",
+          "confidence": 3
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 8,
+          "bug_type": "none_handling",
+          "reason": "get_close_matches can return an empty list if no matches are found, and bool() on an empty list is False, but the logic assumes the command script is always splitable.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "command.script.split(' ') might fail or produce unexpected results if the command script is empty or contains only whitespace.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The replacement logic does not handle cases where the URL already starts with http:// or https://, potentially resulting in invalid URLs like open http://http://example.com.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the path does not contain a slash, rfind returns -1, causing the directory slice to be incorrect.",
+          "confidence": 4,
+          "failing_input": "get_new_command(Command('cat foo', 'cat: foo: No such file or directory'), None)",
+          "expected": "'mkdir -p . && cat foo' (or not attempting to create directory 'fo')",
+          "actual": "'mkdir -p fo && cat foo'",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs",
+            "tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin/hdfs"
+          ],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "start_line": 13,
+          "end_line": 13,
+          "new_code": "    return re.sub(r'^(.*mkdir)(?! -p)(.*)', r'\\1 -p\\2', command.script)",
+          "explanation": "Update the regex to correctly insert -p after mkdir commands even when preceded by paths or other commands."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs",
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin/hdfs",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "failed_after": [
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 149.6,
+      "llm_calls": 11,
+      "input_tokens": 3808,
+      "output_tokens": 5442
+    }
+  },
+  {
+    "id": "thefuck_27",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 1.0,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "thefuck_27"
+      ],
+      "fixed": [
+        "thefuck_27"
+      ],
+      "fix_rate": 1.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The slice [5:] assumes the command starts with 'open ' (5 characters), but it could start with 'xdg-open ', 'gnome-open ', etc., leading to an incorrect URL.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/pacman.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The format string expects two arguments but three are provided, causing a runtime error.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/pacman_not_found.py",
+          "line": 21,
+          "bug_type": "none_handling",
+          "reason": "get_pkgfile(pgr) may return None if no package is found, which would cause replace_command to fail or produce incorrect results.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4,
+          "rejected_because": "כפילות של חשד קרוב"
+        },
+        {
+          "file": "thefuck/rules/pacman.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The format string expects two arguments but three are provided, causing a runtime error.",
+          "confidence": 5,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/pacman_not_found.py",
+          "line": 21,
+          "bug_type": "none_handling",
+          "reason": "get_pkgfile(pgr) may return None if no package is found, which would cause replace_command to fail or produce incorrect results.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "Accessing index 0 of re.findall result without checking if the list is empty will raise an IndexError if no match is found.",
+          "confidence": 4,
+          "failing_input": "Command(script='pip FOO', stderr='ERROR: unknown command \"FOO\"\\nmaybe you meant \"help\"')",
+          "expected": "'pip help'",
+          "actual": "raises IndexError: list index out of range",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/open.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/rules/test_open.py::test_get_new_command[command6-xdg-open",
+            "tests/rules/test_open.py::test_get_new_command[command7-gnome-open",
+            "tests/rules/test_open.py::test_get_new_command[command8-kde-open"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/pacman.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/pacman_not_found.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The slice [5:] assumes the command starts with 'open ' (5 characters), but it could start with 'xdg-open ', 'gnome-open ', etc., leading to an incorrect URL.",
+          "confidence": 5,
+          "failing_input": "Command(script='xdg-open google.com', output='')",
+          "expected": "'xdg-open http://google.com'",
+          "actual": "'open http://pen google.com'",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/open.py",
+          "start_line": 26,
+          "end_line": 26,
+          "new_code": "    return '{} http://{}'.format(command.script.split(' ', 1)[0], command.script.split(' ', 1)[1])",
+          "explanation": "Use the original command name instead of hardcoding 'open' and correctly split the script to extract the URL."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_open.py::test_get_new_command[command6-xdg-open",
+        "tests/rules/test_open.py::test_get_new_command[command7-gnome-open",
+        "tests/rules/test_open.py::test_get_new_command[command8-kde-open",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "failed_after": [
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 169.3,
+      "llm_calls": 13,
+      "input_tokens": 4550,
+      "output_tokens": 6356
+    }
+  },
+  {
+    "id": "thefuck_1",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.4,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 0,
+      "found": [
+        "thefuck_1"
+      ],
+      "fixed": [
+        "thefuck_1"
+      ],
+      "fix_rate": 1.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 16,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 17,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/port_already_in_use.py",
+          "line": 19,
+          "bug_type": "logic",
+          "reason": "The code assumes the second column of the second line of lsof output is always the PID, which is not guaranteed if the output format varies or contains headers.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/prove_recursively.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "The function does not check if part is None before calling startswith, which could cause an AttributeError.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/pyenv_no_such_command.py",
+          "line": 29,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if the regex does not match, causing an IndexError when accessing index 0.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 17,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4,
+          "rejected_because": "כפילות של חשד קרוב"
+        },
+        {
+          "file": "thefuck/rules/prove_recursively.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "The function does not check if part is None before calling startswith, which could cause an AttributeError.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/port_already_in_use.py",
+          "line": 19,
+          "bug_type": "logic",
+          "reason": "The code assumes the second column of the second line of lsof output is always the PID, which is not guaranteed if the output format varies or contains headers.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/pyenv_no_such_command.py",
+          "line": 29,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if the regex does not match, causing an IndexError when accessing index 0.",
+          "confidence": 4,
+          "failing_input": "Command(script='pyenv foo', output=\"pyenv: no such command 'foo'\")",
+          "expected": "[]",
+          "actual": "IndexError: list index out of range",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/rules/test_pip_unknown_command.py::test_get_new_command[pip"
+          ],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/pyenv_no_such_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/port_already_in_use.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 16,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4,
+          "failing_input": "Command(script='pip list-all', output='ERROR: unknown command \"list-all\" maybe you meant \"list\"')",
+          "expected": "'pip list'",
+          "actual": "IndexError: list index out of range",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "start_line": 15,
+          "end_line": 17,
+          "new_code": "    broken_cmd = re.findall(r'ERROR: unknown command \"([a-z+]+)\"', command.output)\n    new_cmd = re.findall(r'maybe you meant \"([a-z+]+)\"', command.output)\n    if not broken_cmd or not new_cmd:\n        return\n    return replace_argument(command.script, broken_cmd[0], new_cmd[0])",
+          "explanation": "Update regex to include '+' character and safely handle empty findall results to prevent IndexError."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+        "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+        "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+        "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+        "tests/rules/test_go_unknown_command.py::test_get_new_command",
+        "tests/rules/test_pip_unknown_command.py::test_get_new_command[pip",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+        "tests/test_conf.py::test_settings_defaults",
+        "tests/test_conf.py::test_settings_from_args",
+        "tests/test_utils.py::TestCache::test_when_etag_changed",
+        "tests/test_utils.py::TestCache::test_with_blank_cache",
+        "tests/test_utils.py::TestCache::test_with_filled_cache",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le"
+      ],
+      "failed_after": [
+        "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+        "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+        "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+        "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+        "tests/rules/test_go_unknown_command.py::test_get_new_command",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+        "tests/test_conf.py::test_settings_defaults",
+        "tests/test_conf.py::test_settings_from_args",
+        "tests/test_utils.py::TestCache::test_when_etag_changed",
+        "tests/test_utils.py::TestCache::test_with_blank_cache",
+        "tests/test_utils.py::TestCache::test_with_filled_cache",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 195.1,
+      "llm_calls": 11,
+      "input_tokens": 4867,
+      "output_tokens": 7495
+    }
+  },
+  {
+    "id": "thefuck_2",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 2,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 0,
+      "recall": 0.0,
+      "precision": null,
+      "recall_exact": 0.0,
+      "precision_exact": null,
+      "false_positives": 0,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/conf.py",
+          "line": 93,
+          "bug_type": "none_handling",
+          "reason": "Accessing os.environ[env] without checking if the key exists or using .get() will raise a KeyError if the environment variable is missing, though the loop at line 113 checks for existence, the method is public and could be called independently.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 213,
+          "bug_type": "logic",
+          "reason": "Concatenating an exception class with a tuple of exception classes using '+' is invalid in Python; it should be a tuple of all exception classes.",
+          "confidence": 5
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/utils.py",
+          "line": 213,
+          "bug_type": "logic",
+          "reason": "Concatenating an exception class with a tuple of exception classes using '+' is invalid in Python; it should be a tuple of all exception classes.",
+          "confidence": 5,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/conf.py",
+          "line": 93,
+          "bug_type": "none_handling",
+          "reason": "Accessing os.environ[env] without checking if the key exists or using .get() will raise a KeyError if the environment variable is missing, though the loop at line 113 checks for existence, the method is public and could be called independently.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/utils.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/conf.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        }
+      ],
+      "suspects": [],
+      "fixes": [],
+      "verification": null,
+      "verify_ok": null,
+      "failing_tests": [
+        "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+        "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+        "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+        "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+        "tests/test_conf.py::test_settings_defaults",
+        "tests/test_conf.py::test_settings_from_args",
+        "tests/test_utils.py::TestCache::test_when_etag_changed",
+        "tests/test_utils.py::TestCache::test_with_blank_cache",
+        "tests/test_utils.py::TestCache::test_with_filled_cache",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le",
+        "tests/test_utils.py::test_get_all_executables_pathsep[C:\\\\\\\\foo;C:\\\\\\\\bar;C:\\\\\\\\baz;C:\\\\\\\\foo\\\\\\\\bar-;]"
+      ],
+      "failed_after": null,
+      "new_failures": null,
+      "skipped": {},
+      "result": "נמצאו חשדות, אבל אף תיקון לא עבר את הבדיקה (או שלא הוצע תיקון).",
+      "seconds": 151.5,
+      "llm_calls": 10,
+      "input_tokens": 12489,
+      "output_tokens": 3169
+    }
+  },
+  {
+    "id": "thefuck_12",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 3,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 1,
+      "recall": 0.0,
+      "precision": 0.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "The logic fails to handle paths without a slash, resulting in an empty directory string instead of the current directory or parent.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.stdout is a string and does not handle the case where it might be None.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script contains a space and a second part, which will raise an IndexError if the command is just 'open'.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.stdout is a string and does not handle the case where it might be None.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script contains a space and a second part, which will raise an IndexError if the command is just 'open'.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "The logic fails to handle paths without a slash, resulting in an empty directory string instead of the current directory or parent.",
+          "confidence": 4,
+          "failing_input": "Command(script='cat file', stderr='cat: file: No such file or directory')",
+          "expected": "'mkdir -p  && cat file' (or no mkdir prefix if directory is empty/current working directory)",
+          "actual": "'mkdir -p fil && cat file'",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 27,
+          "end_line": 30,
+          "new_code": "            dir = file[:file.rfind('/')]\n            if dir:\n                return shell.and_('mkdir -p {}'.format(dir), command.script)\n            return command.script",
+          "explanation": "Handle paths without a directory component by returning the original command instead of attempting to create an empty directory."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "failed_after": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 153.4,
+      "llm_calls": 8,
+      "input_tokens": 3433,
+      "output_tokens": 3956
+    }
+  },
+  {
+    "id": "thefuck_18",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 2,
+      "recall": 1.0,
+      "precision": 0.5,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [
+        "thefuck_18"
+      ],
+      "fixed": [],
+      "fix_rate": 0.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/sudo.py",
+          "line": 25,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.stderr and command.stdout are always strings, but they could be None.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/switch_lang.py",
+          "line": 42,
+          "bug_type": "none_handling",
+          "reason": "The variable matched_layout can be None if _get_matched_layout returns nothing, causing an error in _switch_command.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/systemctl.py",
+          "line": 15,
+          "bug_type": "logic",
+          "reason": "The logic assumes the command structure is always 'systemctl [arg] [arg]', which fails if systemctl is not at index 0 or if there are flags.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/systemctl.py",
+          "line": 21,
+          "bug_type": "off_by_one",
+          "reason": "Swapping the last two elements of the command list blindly assumes the command structure is always exactly as expected, which can corrupt valid commands.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/tmux.py",
+          "line": 15,
+          "bug_type": "none_handling",
+          "reason": "The regex match result cmd is not checked for None before accessing group(1), which will raise an AttributeError if the regex fails to match.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/switch_lang.py",
+          "line": 42,
+          "bug_type": "none_handling",
+          "reason": "The variable matched_layout can be None if _get_matched_layout returns nothing, causing an error in _switch_command.",
+          "confidence": 5,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/tmux.py",
+          "line": 15,
+          "bug_type": "none_handling",
+          "reason": "The regex match result cmd is not checked for None before accessing group(1), which will raise an AttributeError if the regex fails to match.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/systemctl.py",
+          "line": 21,
+          "bug_type": "off_by_one",
+          "reason": "Swapping the last two elements of the command list blindly assumes the command structure is always exactly as expected, which can corrupt valid commands.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/sudo.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/systemctl.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/switch_lang.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/tmux.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/sudo.py",
+          "line": 25,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.stderr and command.stdout are always strings, but they could be None.",
+          "confidence": 4,
+          "failing_input": "Command(\"sudo ls\", \"permission denied\", None)",
+          "expected": "True",
+          "actual": "AttributeError: 'NoneType' object has no attribute 'lower'",
+          "evidence": "unproven"
+        },
+        {
+          "file": "thefuck/rules/systemctl.py",
+          "line": 15,
+          "bug_type": "logic",
+          "reason": "The logic assumes the command structure is always 'systemctl [arg] [arg]', which fails if systemctl is not at index 0 or if there are flags.",
+          "confidence": 3,
+          "failing_input": "Command('/bin/systemctl service start', stderr=\"Unknown operation 'service'.\")",
+          "expected": "True",
+          "actual": "raises ValueError: 'systemctl' is not in list",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/sudo.py",
+          "start_line": 25,
+          "end_line": 26,
+          "new_code": "        if (command.stderr and pattern.lower() in command.stderr.lower())\\\n                or (command.stdout and pattern.lower() in command.stdout.lower()):",
+          "explanation": "Added checks to ensure command.stderr and command.stdout are not None before calling lower() on them."
+        },
+        {
+          "file": "thefuck/rules/systemctl.py",
+          "start_line": 15,
+          "end_line": 15,
+          "new_code": "            len(cmd) > 1 and cmd[-2] == 'systemctl')",
+          "explanation": "Check if 'systemctl' is the second to last argument to correctly identify misordered arguments regardless of path or flags."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_apt_get_search.py::test_match",
+        "tests/rules/test_cargo_no_command.py::test_get_new_command[command0-cargo",
+        "tests/rules/test_cargo_no_command.py::test_match[command0]",
+        "tests/rules/test_cd_mkdir.py::test_match[command0]",
+        "tests/rules/test_cd_mkdir.py::test_match[command1]",
+        "tests/rules/test_cd_mkdir.py::test_match[command2]",
+        "tests/rules/test_composer_not_command.py::test_match",
+        "tests/rules/test_cp_omitting_directory.py::test_match[cp",
+        "tests/rules/test_dirty_untar.py::test_get_new_command[tar",
+        "tests/rules/test_dirty_untar.py::test_match[tar",
+        "tests/rules/test_dirty_untar.py::test_side_effect[tar",
+        "tests/rules/test_dirty_unzip.py::test_get_new_command[unzip",
+        "tests/rules/test_dirty_unzip.py::test_match[unzip",
+        "tests/rules/test_dirty_unzip.py::test_side_effect[unzip",
+        "tests/rules/test_docker_not_command.py::test_match",
+        "tests/rules/test_dry.py::test_get_new_command[command0-cd",
+        "tests/rules/test_dry.py::test_get_new_command[command1-git",
+        "tests/rules/test_dry.py::test_match[command0]",
+        "tests/rules/test_dry.py::test_match[command1]",
+        "tests/rules/test_git_add.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_add.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_add.py::test_match[command0]",
+        "tests/rules/test_git_add.py::test_match[command1]",
+        "tests/rules/test_git_branch_delete.py::test_get_new_command",
+        "tests/rules/test_git_branch_delete.py::test_match",
+        "tests/rules/test_git_branch_list.py::test_get_new_command",
+        "tests/rules/test_git_branch_list.py::test_match",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches0-command0-git",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches1-command1-git",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches2-command2-git",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches3-command3-git",
+        "tests/rules/test_git_checkout.py::test_match[command0]",
+        "tests/rules/test_git_checkout.py::test_match[command1]",
+        "tests/rules/test_git_diff_staged.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_diff_staged.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_diff_staged.py::test_match[command0]",
+        "tests/rules/test_git_diff_staged.py::test_match[command1]",
+        "tests/rules/test_git_fix_stash.py::test_get_new_command[git",
+        "tests/rules/test_git_fix_stash.py::test_match[git",
+        "tests/rules/test_git_not_command.py::test_get_new_command",
+        "tests/rules/test_git_not_command.py::test_match",
+        "tests/rules/test_git_pull.py::test_get_new_command",
+        "tests/rules/test_git_pull.py::test_match",
+        "tests/rules/test_git_pull_clone.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_pull_clone.py::test_match[command0]",
+        "tests/rules/test_git_push.py::test_get_new_command",
+        "tests/rules/test_git_push.py::test_match",
+        "tests/rules/test_git_push_force.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_push_force.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_push_force.py::test_get_new_command[command2-git",
+        "tests/rules/test_git_push_force.py::test_match[command0]",
+        "tests/rules/test_git_push_force.py::test_match[command1]",
+        "tests/rules/test_git_push_force.py::test_match[command2]",
+        "tests/rules/test_git_push_pull.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_push_pull.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_push_pull.py::test_get_new_command[command2-git",
+        "tests/rules/test_git_push_pull.py::test_match[command0]",
+        "tests/rules/test_git_push_pull.py::test_match[command1]",
+        "tests/rules/test_git_push_pull.py::test_match[command2]",
+        "tests/rules/test_git_stash.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_stash.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_stash.py::test_match[command0]",
+        "tests/rules/test_git_stash.py::test_match[command1]",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command2-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command3-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command4-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command5-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command6-git",
+        "tests/rules/test_git_two_dashes.py::test_match[command0]",
+        "tests/rules/test_git_two_dashes.py::test_match[command1]",
+        "tests/rules/test_git_two_dashes.py::test_match[command2]",
+        "tests/rules/test_git_two_dashes.py::test_match[command3]",
+        "tests/rules/test_git_two_dashes.py::test_match[command4]",
+        "tests/rules/test_go_run.py::test_match[command0]",
+        "tests/rules/test_go_run.py::test_match[command1]",
+        "tests/rules/test_grep_recursive.py::test_match",
+        "tests/rules/test_gulp_not_task.py::test_match",
+        "tests/rules/test_has_exists_script.py::test_match",
+        "tests/rules/test_heroku_not_command.py::test_match[log]",
+        "tests/rules/test_heroku_not_command.py::test_match[pge]",
+        "tests/rules/test_java.py::test_match[command0]",
+        "tests/rules/test_java.py::test_match[command1]",
+        "tests/rules/test_javac.py::test_match[command0]",
+        "tests/rules/test_javac.py::test_match[command1]",
+        "tests/rules/test_lein_not_task.py::test_match",
+        "tests/rules/test_ls_lah.py::test_get_new_command",
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/rules/test_man.py::test_get_new_command[command0-new_command0]",
+        "tests/rules/test_man.py::test_match[command0]",
+        "tests/rules/test_man.py::test_match[command1]",
+        "tests/rules/test_man.py::test_match[command2]",
+        "tests/rules/test_man.py::test_match[command3]",
+        "tests/rules/test_man.py::test_match[command4]",
+        "tests/rules/test_man.py::test_match[command5]",
+        "tests/rules/test_man.py::test_match[command6]",
+        "tests/rules/test_mercurial.py::test_get_new_command[command0-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command1-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command2-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command3-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command4-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command5-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command6-hg",
+        "tests/rules/test_mercurial.py::test_match[command0]",
+        "tests/rules/test_mercurial.py::test_match[command1]",
+        "tests/rules/test_mercurial.py::test_match[command2]",
+        "tests/rules/test_mercurial.py::test_match[command3]",
+        "tests/rules/test_mercurial.py::test_match[command4]",
+        "tests/rules/test_mercurial.py::test_match[command5]",
+        "tests/rules/test_mercurial.py::test_match[command6]",
+        "tests/rules/test_mvn_no_command.py::test_match[command0]",
+        "tests/rules/test_mvn_unknown_lifecycle_phase.py::test_match[command0]",
+        "tests/rules/test_no_command.py::test_get_new_command",
+        "tests/rules/test_no_command.py::test_match",
+        "tests/rules/test_open.py::test_match[command0]",
+        "tests/rules/test_open.py::test_match[command1]",
+        "tests/rules/test_open.py::test_match[command2]",
+        "tests/rules/test_open.py::test_match[command3]",
+        "tests/rules/test_open.py::test_match[command4]",
+        "tests/rules/test_open.py::test_match[command5]",
+        "tests/rules/test_open.py::test_match[command6]",
+        "tests/rules/test_open.py::test_match[command7]",
+        "tests/rules/test_open.py::test_match[command8]",
+        "tests/rules/test_pacman_not_found.py::test_get_new_command_mocked[command0-fixed0]",
+        "tests/rules/test_pacman_not_found.py::test_get_new_command_mocked[command1-fixed1]",
+        "tests/rules/test_pacman_not_found.py::test_get_new_command_mocked[command2-fixed2]",
+        "tests/rules/test_pacman_not_found.py::test_match_mocked[command0]",
+        "tests/rules/test_pacman_not_found.py::test_match_mocked[command1]",
+        "tests/rules/test_pacman_not_found.py::test_match_mocked[command2]",
+        "tests/rules/test_pip_unknown_command.py::test_match",
+        "tests/rules/test_python_command.py::test_match",
+        "tests/rules/test_python_execute.py::test_match[command0]",
+        "tests/rules/test_python_execute.py::test_match[command1]",
+        "tests/rules/test_rm_root.py::test_match",
+        "tests/rules/test_sed_unterminated_s.py::test_get_new_command",
+        "tests/rules/test_sed_unterminated_s.py::test_match",
+        "tests/rules/test_ssh_known_host.py::test_match",
+        "tests/rules/test_sudo.py::test_not_match",
+        "tests/rules/test_systemctl.py::test_get_new_command",
+        "tests/rules/test_systemctl.py::test_match",
+        "tests/rules/test_tmux.py::test_match",
+        "tests/rules/test_touch.py::test_match",
+        "tests/rules/test_tsuru_login.py::test_match[command0]",
+        "tests/rules/test_tsuru_login.py::test_match[command1]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command0]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command1]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command2]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command3]",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command0-vagrant",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command1-new_command1]",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command2-vagrant",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command3-new_command3]",
+        "tests/rules/test_vagrant_up.py::test_match[command0]",
+        "tests/rules/test_vagrant_up.py::test_match[command1]",
+        "tests/rules/test_vagrant_up.py::test_match[command2]",
+        "tests/rules/test_vagrant_up.py::test_match[command3]",
+        "tests/rules/test_whois.py::test_get_new_command[command0-whois",
+        "tests/rules/test_whois.py::test_get_new_command[command1-whois",
+        "tests/rules/test_whois.py::test_get_new_command[command2-new_command2]",
+        "tests/rules/test_whois.py::test_match[command0]",
+        "tests/rules/test_whois.py::test_match[command1]",
+        "tests/rules/test_whois.py::test_match[command2]",
+        "tests/specific/test_git.py::test_git_support[git",
+        "tests/specific/test_git.py::test_git_support_match[git",
+        "tests/specific/test_git.py::test_git_support_match[hub",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls",
+        "tests/test_utils.py::test_for_app[git",
+        "tests/test_utils.py::test_for_app[hub",
+        "tests/test_utils.py::test_is_app[git",
+        "tests/test_utils.py::test_is_app[hub"
+      ],
+      "failed_after": [
+        "tests/rules/test_apt_get_search.py::test_match",
+        "tests/rules/test_cargo_no_command.py::test_get_new_command[command0-cargo",
+        "tests/rules/test_cargo_no_command.py::test_match[command0]",
+        "tests/rules/test_cd_mkdir.py::test_match[command0]",
+        "tests/rules/test_cd_mkdir.py::test_match[command1]",
+        "tests/rules/test_cd_mkdir.py::test_match[command2]",
+        "tests/rules/test_composer_not_command.py::test_match",
+        "tests/rules/test_cp_omitting_directory.py::test_match[cp",
+        "tests/rules/test_dirty_untar.py::test_get_new_command[tar",
+        "tests/rules/test_dirty_untar.py::test_match[tar",
+        "tests/rules/test_dirty_untar.py::test_side_effect[tar",
+        "tests/rules/test_dirty_unzip.py::test_get_new_command[unzip",
+        "tests/rules/test_dirty_unzip.py::test_match[unzip",
+        "tests/rules/test_dirty_unzip.py::test_side_effect[unzip",
+        "tests/rules/test_docker_not_command.py::test_match",
+        "tests/rules/test_dry.py::test_get_new_command[command0-cd",
+        "tests/rules/test_dry.py::test_get_new_command[command1-git",
+        "tests/rules/test_dry.py::test_match[command0]",
+        "tests/rules/test_dry.py::test_match[command1]",
+        "tests/rules/test_git_add.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_add.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_add.py::test_match[command0]",
+        "tests/rules/test_git_add.py::test_match[command1]",
+        "tests/rules/test_git_branch_delete.py::test_get_new_command",
+        "tests/rules/test_git_branch_delete.py::test_match",
+        "tests/rules/test_git_branch_list.py::test_get_new_command",
+        "tests/rules/test_git_branch_list.py::test_match",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches0-command0-git",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches1-command1-git",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches2-command2-git",
+        "tests/rules/test_git_checkout.py::test_get_new_command[branches3-command3-git",
+        "tests/rules/test_git_checkout.py::test_match[command0]",
+        "tests/rules/test_git_checkout.py::test_match[command1]",
+        "tests/rules/test_git_diff_staged.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_diff_staged.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_diff_staged.py::test_match[command0]",
+        "tests/rules/test_git_diff_staged.py::test_match[command1]",
+        "tests/rules/test_git_fix_stash.py::test_get_new_command[git",
+        "tests/rules/test_git_fix_stash.py::test_match[git",
+        "tests/rules/test_git_not_command.py::test_get_new_command",
+        "tests/rules/test_git_not_command.py::test_match",
+        "tests/rules/test_git_pull.py::test_get_new_command",
+        "tests/rules/test_git_pull.py::test_match",
+        "tests/rules/test_git_pull_clone.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_pull_clone.py::test_match[command0]",
+        "tests/rules/test_git_push.py::test_get_new_command",
+        "tests/rules/test_git_push.py::test_match",
+        "tests/rules/test_git_push_force.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_push_force.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_push_force.py::test_get_new_command[command2-git",
+        "tests/rules/test_git_push_force.py::test_match[command0]",
+        "tests/rules/test_git_push_force.py::test_match[command1]",
+        "tests/rules/test_git_push_force.py::test_match[command2]",
+        "tests/rules/test_git_push_pull.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_push_pull.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_push_pull.py::test_get_new_command[command2-git",
+        "tests/rules/test_git_push_pull.py::test_match[command0]",
+        "tests/rules/test_git_push_pull.py::test_match[command1]",
+        "tests/rules/test_git_push_pull.py::test_match[command2]",
+        "tests/rules/test_git_stash.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_stash.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_stash.py::test_match[command0]",
+        "tests/rules/test_git_stash.py::test_match[command1]",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command0-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command1-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command2-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command3-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command4-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command5-git",
+        "tests/rules/test_git_two_dashes.py::test_get_new_command[command6-git",
+        "tests/rules/test_git_two_dashes.py::test_match[command0]",
+        "tests/rules/test_git_two_dashes.py::test_match[command1]",
+        "tests/rules/test_git_two_dashes.py::test_match[command2]",
+        "tests/rules/test_git_two_dashes.py::test_match[command3]",
+        "tests/rules/test_git_two_dashes.py::test_match[command4]",
+        "tests/rules/test_go_run.py::test_match[command0]",
+        "tests/rules/test_go_run.py::test_match[command1]",
+        "tests/rules/test_grep_recursive.py::test_match",
+        "tests/rules/test_gulp_not_task.py::test_match",
+        "tests/rules/test_has_exists_script.py::test_match",
+        "tests/rules/test_heroku_not_command.py::test_match[log]",
+        "tests/rules/test_heroku_not_command.py::test_match[pge]",
+        "tests/rules/test_java.py::test_match[command0]",
+        "tests/rules/test_java.py::test_match[command1]",
+        "tests/rules/test_javac.py::test_match[command0]",
+        "tests/rules/test_javac.py::test_match[command1]",
+        "tests/rules/test_lein_not_task.py::test_match",
+        "tests/rules/test_ls_lah.py::test_get_new_command",
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/rules/test_man.py::test_get_new_command[command0-new_command0]",
+        "tests/rules/test_man.py::test_match[command0]",
+        "tests/rules/test_man.py::test_match[command1]",
+        "tests/rules/test_man.py::test_match[command2]",
+        "tests/rules/test_man.py::test_match[command3]",
+        "tests/rules/test_man.py::test_match[command4]",
+        "tests/rules/test_man.py::test_match[command5]",
+        "tests/rules/test_man.py::test_match[command6]",
+        "tests/rules/test_mercurial.py::test_get_new_command[command0-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command1-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command2-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command3-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command4-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command5-hg",
+        "tests/rules/test_mercurial.py::test_get_new_command[command6-hg",
+        "tests/rules/test_mercurial.py::test_match[command0]",
+        "tests/rules/test_mercurial.py::test_match[command1]",
+        "tests/rules/test_mercurial.py::test_match[command2]",
+        "tests/rules/test_mercurial.py::test_match[command3]",
+        "tests/rules/test_mercurial.py::test_match[command4]",
+        "tests/rules/test_mercurial.py::test_match[command5]",
+        "tests/rules/test_mercurial.py::test_match[command6]",
+        "tests/rules/test_mvn_no_command.py::test_match[command0]",
+        "tests/rules/test_mvn_unknown_lifecycle_phase.py::test_match[command0]",
+        "tests/rules/test_no_command.py::test_get_new_command",
+        "tests/rules/test_no_command.py::test_match",
+        "tests/rules/test_open.py::test_match[command0]",
+        "tests/rules/test_open.py::test_match[command1]",
+        "tests/rules/test_open.py::test_match[command2]",
+        "tests/rules/test_open.py::test_match[command3]",
+        "tests/rules/test_open.py::test_match[command4]",
+        "tests/rules/test_open.py::test_match[command5]",
+        "tests/rules/test_open.py::test_match[command6]",
+        "tests/rules/test_open.py::test_match[command7]",
+        "tests/rules/test_open.py::test_match[command8]",
+        "tests/rules/test_pacman_not_found.py::test_get_new_command_mocked[command0-fixed0]",
+        "tests/rules/test_pacman_not_found.py::test_get_new_command_mocked[command1-fixed1]",
+        "tests/rules/test_pacman_not_found.py::test_get_new_command_mocked[command2-fixed2]",
+        "tests/rules/test_pacman_not_found.py::test_match_mocked[command0]",
+        "tests/rules/test_pacman_not_found.py::test_match_mocked[command1]",
+        "tests/rules/test_pacman_not_found.py::test_match_mocked[command2]",
+        "tests/rules/test_pip_unknown_command.py::test_match",
+        "tests/rules/test_python_command.py::test_match",
+        "tests/rules/test_python_execute.py::test_match[command0]",
+        "tests/rules/test_python_execute.py::test_match[command1]",
+        "tests/rules/test_rm_root.py::test_match",
+        "tests/rules/test_sed_unterminated_s.py::test_get_new_command",
+        "tests/rules/test_sed_unterminated_s.py::test_match",
+        "tests/rules/test_ssh_known_host.py::test_match",
+        "tests/rules/test_sudo.py::test_not_match",
+        "tests/rules/test_systemctl.py::test_get_new_command",
+        "tests/rules/test_systemctl.py::test_match",
+        "tests/rules/test_tmux.py::test_match",
+        "tests/rules/test_touch.py::test_match",
+        "tests/rules/test_tsuru_login.py::test_match[command0]",
+        "tests/rules/test_tsuru_login.py::test_match[command1]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command0]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command1]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command2]",
+        "tests/rules/test_tsuru_not_command.py::test_match[command3]",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command0-vagrant",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command1-new_command1]",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command2-vagrant",
+        "tests/rules/test_vagrant_up.py::test_get_new_command[command3-new_command3]",
+        "tests/rules/test_vagrant_up.py::test_match[command0]",
+        "tests/rules/test_vagrant_up.py::test_match[command1]",
+        "tests/rules/test_vagrant_up.py::test_match[command2]",
+        "tests/rules/test_vagrant_up.py::test_match[command3]",
+        "tests/rules/test_whois.py::test_get_new_command[command0-whois",
+        "tests/rules/test_whois.py::test_get_new_command[command1-whois",
+        "tests/rules/test_whois.py::test_get_new_command[command2-new_command2]",
+        "tests/rules/test_whois.py::test_match[command0]",
+        "tests/rules/test_whois.py::test_match[command1]",
+        "tests/rules/test_whois.py::test_match[command2]",
+        "tests/specific/test_git.py::test_git_support[git",
+        "tests/specific/test_git.py::test_git_support_match[git",
+        "tests/specific/test_git.py::test_git_support_match[hub",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls",
+        "tests/test_utils.py::test_for_app[git",
+        "tests/test_utils.py::test_for_app[hub",
+        "tests/test_utils.py::test_is_app[git",
+        "tests/test_utils.py::test_is_app[hub"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 436.8,
+      "llm_calls": 16,
+      "input_tokens": 7271,
+      "output_tokens": 8680
+    }
+  },
+  {
+    "id": "thefuck_32",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 1,
+      "recall": 0.0,
+      "precision": 0.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "Replacing the first element with 'ls -lah' results in 'ls -lah arg1 arg2', which is incorrect if the original command was 'ls arg1' as it becomes 'ls -lah arg1' instead of 'ls -lah arg1'.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 12,
+          "bug_type": "logic",
+          "reason": "Inserting ' 3 ' into the list will result in an extra space and incorrect command formatting when joined.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "Using join on a list with spaces already included results in double spaces or malformed command strings.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The slice [3:] assumes the command starts with exactly 'man', but it does not account for potential leading whitespace or the fact that the command might already have a space, leading to 'man  command' or incorrect formatting.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "Using join on a list with spaces already included results in double spaces or malformed command strings.",
+          "confidence": 5,
+          "rejected_because": "כפילות של חשד קרוב"
+        },
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "Replacing the first element with 'ls -lah' results in 'ls -lah arg1 arg2', which is incorrect if the original command was 'ls arg1' as it becomes 'ls -lah arg1' instead of 'ls -lah arg1'.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The slice [3:] assumes the command starts with exactly 'man', but it does not account for potential leading whitespace or the fact that the command might already have a space, leading to 'man  command' or incorrect formatting.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/man.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 12,
+          "bug_type": "logic",
+          "reason": "Inserting ' 3 ' into the list will result in an extra space and incorrect command formatting when joined.",
+          "confidence": 5,
+          "failing_input": "Command(script=\"man -a open\", output=\"\")",
+          "expected": "\"man 3 -a open\"",
+          "actual": "\"man 3 -aopen\"",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/man.py",
+          "start_line": 12,
+          "end_line": 13,
+          "new_code": "    split_cmd.insert(1, '3')\n    return \" \".join(split_cmd)",
+          "explanation": "Correct the insertion of the section number and use a space separator when joining the command parts."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "failed_after": [
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 132.1,
+      "llm_calls": 13,
+      "input_tokens": 4327,
+      "output_tokens": 7383
+    }
+  },
+  {
+    "id": "pysnooper_3",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 1.0,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "pysnooper_3"
+      ],
+      "fixed": [
+        "pysnooper_3"
+      ],
+      "fix_rate": 1.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "pysnooper/pycompat.py",
+          "line": 32,
+          "bug_type": "logic",
+          "reason": "The __subclasshook__ implementation returns True if the attribute exists, but it should return NotImplemented if the attribute is missing to allow other checks to proceed.",
+          "confidence": 4
+        },
+        {
+          "file": "pysnooper/pysnooper.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The variable output_path is not defined in the scope of the write function, it should be output.",
+          "confidence": 5
+        },
+        {
+          "file": "pysnooper/tracer.py",
+          "line": 137,
+          "bug_type": "logic",
+          "reason": "Returning self.trace when the frame is not the target code object prevents the tracer from correctly ignoring frames outside the target scope.",
+          "confidence": 4
+        },
+        {
+          "file": "pysnooper/tracer.py",
+          "line": 143,
+          "bug_type": "logic",
+          "reason": "Returning self.trace inside the depth loop incorrectly continues tracing frames that are not part of the target call stack.",
+          "confidence": 4
+        },
+        {
+          "file": "pysnooper/tracer.py",
+          "line": 148,
+          "bug_type": "logic",
+          "reason": "Returning self.trace when the target code object is not found in the stack depth prevents the tracer from correctly ignoring irrelevant frames.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "pysnooper/tracer.py",
+          "line": 137,
+          "bug_type": "logic",
+          "reason": "Returning self.trace when the frame is not the target code object prevents the tracer from correctly ignoring frames outside the target scope.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "pysnooper/tracer.py",
+          "line": 143,
+          "bug_type": "logic",
+          "reason": "Returning self.trace inside the depth loop incorrectly continues tracing frames that are not part of the target call stack.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "pysnooper/tracer.py",
+          "line": 148,
+          "bug_type": "logic",
+          "reason": "Returning self.trace when the target code object is not found in the stack depth prevents the tracer from correctly ignoring irrelevant frames.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "pysnooper/pycompat.py",
+          "line": 32,
+          "bug_type": "logic",
+          "reason": "The __subclasshook__ implementation returns True if the attribute exists, but it should return NotImplemented if the attribute is missing to allow other checks to proceed.",
+          "confidence": 4,
+          "failing_input": "class C: pass\nPathLike.register(C)\nissubclass(C, PathLike)",
+          "expected": "True",
+          "actual": "False",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "pysnooper/tracer.py",
+          "status": "invalid_edit",
+          "detail": "pysnooper/tracer.py: תיקונים חופפים בשורות 137-137",
+          "attempts": 1
+        },
+        {
+          "file": "pysnooper/pycompat.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "pysnooper/pysnooper.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/test_pysnooper.py::test_file_output"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "pysnooper/pysnooper.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The variable output_path is not defined in the scope of the write function, it should be output.",
+          "confidence": 5,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "pysnooper/pysnooper.py",
+          "start_line": 26,
+          "end_line": 26,
+          "new_code": "            with open(output, 'a') as output_file:",
+          "explanation": "Corrected the variable name from output_path to output in the write function."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/test_pysnooper.py::test_file_output"
+      ],
+      "failed_after": [],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 83.5,
+      "llm_calls": 12,
+      "input_tokens": 9920,
+      "output_tokens": 12905
+    }
+  }
+]

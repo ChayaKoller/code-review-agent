@@ -1,0 +1,512 @@
+[
+  {
+    "id": "thefuck_1",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.4,
+      "suspects": 2,
+      "recall": 1.0,
+      "precision": 0.5,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [
+        "thefuck_1"
+      ],
+      "fixed": [],
+      "fix_rate": 0.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 16,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 17,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/port_already_in_use.py",
+          "line": 19,
+          "bug_type": "logic",
+          "reason": "The code assumes the second column of the second line of lsof output is always the PID, which is not guaranteed if the output format varies or contains headers.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/prove_recursively.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "The function does not check if part is None before calling startswith, which could cause an AttributeError.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/pyenv_no_such_command.py",
+          "line": 29,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if the regex does not match, causing an IndexError when accessing index 0.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 17,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4,
+          "rejected_because": "כפילות של חשד קרוב"
+        },
+        {
+          "file": "thefuck/rules/prove_recursively.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "The function does not check if part is None before calling startswith, which could cause an AttributeError.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/port_already_in_use.py",
+          "line": 19,
+          "bug_type": "logic",
+          "reason": "The code assumes the second column of the second line of lsof output is always the PID, which is not guaranteed if the output format varies or contains headers.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/pyenv_no_such_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "line": 16,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if no match is found, causing an IndexError when accessing index 0.",
+          "confidence": 4,
+          "failing_input": "Command(script='pip check-out', output='ERROR: unknown command \"check-out\"\\nmaybe you meant \"check\"')",
+          "expected": "'pip check'",
+          "actual": "IndexError: list index out of range",
+          "evidence": "unproven"
+        },
+        {
+          "file": "thefuck/rules/pyenv_no_such_command.py",
+          "line": 29,
+          "bug_type": "none_handling",
+          "reason": "re.findall might return an empty list if the regex does not match, causing an IndexError when accessing index 0.",
+          "confidence": 4,
+          "failing_input": "get_new_command(Command('pyenv foo', \"pyenv: no such command 'foo'\"))",
+          "expected": "[]",
+          "actual": "IndexError: list index out of range",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/pip_unknown_command.py",
+          "start_line": 15,
+          "end_line": 17,
+          "new_code": "    broken_cmd = re.findall(r'ERROR: unknown command \"([a-z-]+)\"', command.output)\n    new_cmd = re.findall(r'maybe you meant \"([a-z-]+)\"', command.output)\n    if not broken_cmd or not new_cmd:\n        return\n    return replace_argument(command.script, broken_cmd[0], new_cmd[0])",
+          "explanation": "Update regex to support hyphens and add safety checks for empty findall results to prevent IndexError."
+        },
+        {
+          "file": "thefuck/rules/pyenv_no_such_command.py",
+          "start_line": 29,
+          "end_line": 29,
+          "new_code": "    found = re.findall(r\"pyenv: no such command `([^']*)'\", command.output)\n    if not found:\n        return []\n    broken = found[0]",
+          "explanation": "Check if re.findall returns any matches before accessing the first element to avoid IndexError."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+        "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+        "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+        "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+        "tests/rules/test_go_unknown_command.py::test_get_new_command",
+        "tests/rules/test_pip_unknown_command.py::test_get_new_command[pip",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+        "tests/test_conf.py::test_settings_defaults",
+        "tests/test_conf.py::test_settings_from_args",
+        "tests/test_utils.py::TestCache::test_when_etag_changed",
+        "tests/test_utils.py::TestCache::test_with_blank_cache",
+        "tests/test_utils.py::TestCache::test_with_filled_cache",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le"
+      ],
+      "failed_after": [
+        "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+        "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+        "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+        "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+        "tests/rules/test_go_unknown_command.py::test_get_new_command",
+        "tests/rules/test_pip_unknown_command.py::test_get_new_command[pip",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+        "tests/test_conf.py::test_settings_defaults",
+        "tests/test_conf.py::test_settings_from_args",
+        "tests/test_utils.py::TestCache::test_when_etag_changed",
+        "tests/test_utils.py::TestCache::test_with_blank_cache",
+        "tests/test_utils.py::TestCache::test_with_filled_cache",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 125.1,
+      "llm_calls": 9,
+      "input_tokens": 3492,
+      "output_tokens": 4941
+    }
+  },
+  {
+    "id": "thefuck_12",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 3,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 1,
+      "recall": 0.0,
+      "precision": 0.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "The logic fails to handle paths without a slash, resulting in an empty directory string instead of the current directory or parent.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.stdout is a string and does not handle the case where it might be None.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script contains a space and a second part, which will raise an IndexError if the command is just 'open'.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.stdout is a string and does not handle the case where it might be None.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script contains a space and a second part, which will raise an IndexError if the command is just 'open'.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "The logic fails to handle paths without a slash, resulting in an empty directory string instead of the current directory or parent.",
+          "confidence": 4,
+          "failing_input": "Command(script='cat foo', stderr=\"No such file or directory: 'foo'\")",
+          "expected": "None",
+          "actual": "'mkdir -p fo && cat foo'",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 27,
+          "end_line": 27,
+          "new_code": "            dir = file[:file.rfind('/')] if '/' in file else None",
+          "explanation": "Check if a slash exists in the file path before attempting to extract the directory."
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 29,
+          "end_line": 30,
+          "new_code": "            if dir:\n                formatme = shell.and_('mkdir -p {}', '{}')\n                return formatme.format(dir, command.script)",
+          "explanation": "Only suggest mkdir if a directory path was successfully identified."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "failed_after": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 111.1,
+      "llm_calls": 7,
+      "input_tokens": 3082,
+      "output_tokens": 4989
+    }
+  },
+  {
+    "id": "thefuck_25",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 1,
+      "recall": 0.0,
+      "precision": 0.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 8,
+          "bug_type": "none_handling",
+          "reason": "get_close_matches can return an empty list if no matches are found, and bool() on an empty list is False, but the logic assumes the command script is always splitable.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "command.script.split(' ') might fail or produce unexpected results if the command script is empty or contains only whitespace.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the path does not contain a slash, rfind returns -1, causing the directory slice to be incorrect.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The replacement logic does not handle cases where the URL already starts with http:// or https://, potentially resulting in invalid URLs like open http://http://example.com.",
+          "confidence": 3
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 8,
+          "bug_type": "none_handling",
+          "reason": "get_close_matches can return an empty list if no matches are found, and bool() on an empty list is False, but the logic assumes the command script is always splitable.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "command.script.split(' ') might fail or produce unexpected results if the command script is empty or contains only whitespace.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך"
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex replacement does not account for flags already present in the mkdir command, potentially resulting in invalid syntax like 'mkdir -p -v path'.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 26,
+          "bug_type": "logic",
+          "reason": "The replacement logic does not handle cases where the URL already starts with http:// or https://, potentially resulting in invalid URLs like open http://http://example.com.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the path does not contain a slash, rfind returns -1, causing the directory slice to be incorrect.",
+          "confidence": 4,
+          "failing_input": "Command(script='cat file.txt', stderr='cat: file.txt: No such file or directory')",
+          "expected": "'mkdir -p file.txt && cat file.txt' (or not creating a directory 'file.t')",
+          "actual": "'mkdir -p file.t && cat file.txt'",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 27,
+          "end_line": 27,
+          "new_code": "            dir = file[:file.rfind('/')] if '/' in file else ''",
+          "explanation": "Handle cases where the file path does not contain a directory separator to avoid incorrect slicing."
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 29,
+          "end_line": 30,
+          "new_code": "            if dir:\n                return shells.and_('mkdir -p {}'.format(dir), command.script)\n            return command.script",
+          "explanation": "Only attempt to create a directory if a directory path was actually found."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs",
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin/hdfs",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "failed_after": [
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs",
+        "tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin/hdfs",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 79.2,
+      "llm_calls": 8,
+      "input_tokens": 2454,
+      "output_tokens": 5036
+    }
+  }
+]

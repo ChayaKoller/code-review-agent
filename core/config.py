@@ -8,11 +8,15 @@ load_dotenv()  # טוען את .env אל os.environ
 
 # --- מודל ---
 MODEL_NAME = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite")
+# מודל למאמת (check_suspect). ריק = אותו מודל. מודל אחר מקטין את הסיכוי שהמאמת "יסכים עם עצמו"
+CHECK_MODEL_NAME = os.getenv("CHECK_MODEL_NAME") or None
 LLM_TEMPERATURE = 0  # תשובות יציבות ככל האפשר
 LLM_MAX_RETRIES = 3  # ניסיונות חוזרים בתוך הספרייה של Gemini
 # אחרי זה: עוד ניסיונות שלנו, בהמתנה שמכפילה את עצמה (10, 20, 40, 80 שניות)
 LLM_BUSY_RETRIES = 5
 LLM_RETRY_FIRST_DELAY = 10
+# זמן מקסימלי לקריאה אחת למודל. בלי זה קריאה שנתקעה (חיבור שלא עונה) מחכה לנצח.
+LLM_TIMEOUT_SECONDS = int(os.getenv("LLM_TIMEOUT_SECONDS", "180"))
 
 # --- בחירת קבצים לסקירה ---
 MIN_FILE_LINES = 5
@@ -78,3 +82,12 @@ MAX_OUTPUT_CHARS = 100_000  # פלט ארוך יותר נחתך (נשאר הסו
 
 # --- אישור אנושי ---
 MAX_REJECT_ATTEMPTS = 2
+
+# --- שלב 6: סינון חשדות ובדיקת תיקונים ---
+DEDUP_WINDOW = 3  # חשדות באותו קובץ במרחק עד 3 שורות = אותו באג
+SUSPECT_MIN_CONFIDENCE = 3  # ביטחון 1-5 מהמודל. מתחת לסף לא מאמתים בכלל (חוסך קריאות)
+MAX_SUSPECTS_TO_VERIFY = 6  # כמה חשדות (לפי ביטחון) נשלחים למאמת
+MAX_SUSPECTS = 3  # תקרה לחשדות שמגיעים לתיקון
+MAX_DOUBTFUL = 2  # חשדות שהמאמת זרק ומקבלים הזדמנות בטסטים (רק כשיש טסטים)
+FIX_RETRIES = 1  # תיקון ששבר טסט מקבל עוד ניסיון אחד עם פלט הכשל
+FAILURE_FEEDBACK_CHARS = 2000  # כמה מפלט הכשל שולחים למודל בניסיון השני
