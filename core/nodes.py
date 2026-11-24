@@ -194,7 +194,8 @@ def baseline(state: ReviewState, deps: Deps) -> dict:
         return {"failing_tests": []}
     run = deps.runner.run_tests(state["sandbox_path"], extra_packages=deps.extra_packages)
     broken = run.timed_out or run.no_tests or bool(run.missing_modules)
-    return {"failing_tests": run.failed, "baseline_broken": broken}
+    # initial_failing_tests: נשמר פעם אחת. next_round דורס את failing_tests בכל סבב, וההערכה צריכה את המקור
+    return {"failing_tests": run.failed, "initial_failing_tests": run.failed, "baseline_broken": broken}
 
 
 def propose_fix(state: ReviewState, deps: Deps) -> dict:

@@ -46,7 +46,7 @@ _AUTO_ANSWERS = {"review_fix": {"decision": APPROVE}, "review_push": {"decision"
 # thefuck_1 = נמצא ותוקן לא נכון, thefuck_25 = נמצא ותיקון בקובץ נקי שבר טסט, thefuck_12 = לא נמצא.
 # משפרים על אלה, ורק בסוף מריצים את כל ה-test (כדי לא "להתאים" את הסוכן לשלושה פריטים).
 QUICK_IDS = {"test": ["thefuck_1", "thefuck_25", "thefuck_12"], "dev": ["library_tracker"]}
-_KEEP = ("raw_suspects", "rejected_suspects", "screening", "suspects", "fixes", "verification", "verify_ok", "failing_tests", "failed_after",
+_KEEP = ("raw_suspects", "rejected_suspects", "screening", "suspects", "fixes", "verification", "verify_ok", "failing_tests", "initial_failing_tests", "failed_after",
          "new_failures", "skipped", "result")  # fmt: skip
 
 

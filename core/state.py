@@ -68,6 +68,7 @@ class ReviewState(TypedDict, total=False):
     doubtful_suspects: list[Suspect]  # המאמת זרק אותם; אם יש טסטים, הם יכולים לחזור רק דרך tests_confirmed
     doubtful_files: list[str]  # קבצים שהתיקון שלהם הוצע מחשד doubtful
     failing_tests: list[str]  # טסטים שנכשלו כבר לפני התיקון (כדי לא להאשים בהם את התיקון)
+    initial_failing_tests: list[str]  # הכשלים של הסבב הראשון. לא מתעדכן ב-next_round (בשביל ההערכה)
     baseline_broken: bool  # הטסטים לא רצו ב-baseline (ספריות חסרות, timeout): לא מסננים לפיהם
 
     # --- תיקון ואישור ראשון ---

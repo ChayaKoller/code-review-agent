@@ -33,6 +33,15 @@ def test_fixed_requires_failing_before_passing_after_and_nothing_broken():
     assert fixed_bugs(BUGS, {"suspects": [], "fixes": []}) == []  # לא הוצע תיקון = 0, לא "לא נמדד"
 
 
+def test_fixed_counts_bugs_fixed_in_earlier_rounds():
+    """כמה סבבים: next_round דורס את failing_tests, אז "לפני" נלקח מ-initial_failing_tests.
+    (holdout-v13 על dev: 5 באגים תוקנו בסבבים 1-2, והמדד הישן החזיר 0.)"""
+    result = {"verification": "tests", "initial_failing_tests": ["tests/test_a.py::t1", "tests/test_b.py::t2"],
+              "failing_tests": ["tests/test_b.py::t2"],  # ה-baseline של הסבב האחרון
+              "failed_after": ["tests/test_b.py::t2"], "new_failures": [], "fixes": [{"file": "a.py"}]}  # fmt: skip
+    assert fixed_bugs(BUGS, result) == ["b1"]
+
+
 def test_dev_dataset_is_valid():
     items = load_dataset()
     assert {x["id"] for x in items} == {"library_tracker", "order_reports"}

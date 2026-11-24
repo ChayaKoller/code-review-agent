@@ -52,7 +52,8 @@ def fixed_bugs(bugs: list[dict], result: dict) -> list[str] | None:
         return []
     if any(_is_test_path(e["file"]) for e in result.get("fixes", [])):
         return []  # שינוי בקובץ טסט פוסל
-    before = {_base(t) for t in result.get("failing_tests", [])}
+    # בכמה סבבים next_round דורס את failing_tests, ולכן "לפני" = הכשלים של הסבב הראשון
+    before = {_base(t) for t in result.get("initial_failing_tests") or result.get("failing_tests", [])}
     after = {_base(t) for t in result.get("failed_after", [])}
     return [b["id"] for b in with_tests if _base(b["failing_test"]) in before and _base(b["failing_test"]) not in after]
 

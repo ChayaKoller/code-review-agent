@@ -1,0 +1,510 @@
+[
+  {
+    "id": "library_tracker",
+    "metrics": {
+      "bugs": 6,
+      "raw_suspects": 10,
+      "raw_recall": 0.8333333333333334,
+      "raw_precision": 0.8,
+      "suspects": 6,
+      "recall": 0.8333333333333334,
+      "precision": 1.0,
+      "recall_exact": 0.8333333333333334,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "lt2",
+        "lt3",
+        "lt4",
+        "lt5",
+        "lt6"
+      ],
+      "fixed": [],
+      "fix_rate": 0.0,
+      "lost_at": {
+        "lt1": "not_suspected",
+        "lt2": "not_fixed",
+        "lt3": "not_fixed",
+        "lt4": "not_fixed",
+        "lt5": "not_fixed",
+        "lt6": "not_fixed"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "loans.py",
+          "line": 23,
+          "bug_type": "logic",
+          "reason": "The logic uses max instead of min, causing the fee to always be at least max_fee instead of capped at max_fee.",
+          "confidence": 5
+        },
+        {
+          "file": "members.py",
+          "line": 3,
+          "bug_type": "none_handling",
+          "reason": "The code calls .strip() on the result of member.get('email') without checking if it is None, causing an AttributeError if the email key is missing or None.",
+          "confidence": 5
+        },
+        {
+          "file": "ratings.py",
+          "line": 3,
+          "bug_type": "logic",
+          "reason": "The condition avg >= 3 is checked before avg >= 4.5, making it impossible to return 'excellent'.",
+          "confidence": 5
+        },
+        {
+          "file": "text_tools.py",
+          "line": 5,
+          "bug_type": "off_by_one",
+          "reason": "The truncate function returns a string longer than max_len when it appends '...'.",
+          "confidence": 5
+        },
+        {
+          "file": "text_tools.py",
+          "line": 10,
+          "bug_type": "none_handling",
+          "reason": "The word_count function raises an AttributeError if text is None.",
+          "confidence": 5
+        },
+        {
+          "file": "ratings.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "The function does not handle the case where the input list is None or a book dictionary is missing the 'rating' key.",
+          "confidence": 3
+        },
+        {
+          "file": "text_tools.py",
+          "line": 5,
+          "bug_type": "off_by_one",
+          "reason": "The truncate function returns a string longer than max_len when it appends '...'.",
+          "confidence": 5
+        },
+        {
+          "file": "text_tools.py",
+          "line": 10,
+          "bug_type": "none_handling",
+          "reason": "The word_count function raises an AttributeError if text is None.",
+          "confidence": 5
+        },
+        {
+          "file": "ratings.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "The function does not handle the case where the input list is None or a book dictionary is missing the 'rating' key.",
+          "confidence": 3
+        },
+        {
+          "file": "text_tools.py",
+          "line": 5,
+          "bug_type": "logic",
+          "reason": "The truncate function does not handle cases where max_len is less than 3, causing an invalid slice index.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "text_tools.py",
+          "line": 5,
+          "bug_type": "off_by_one",
+          "reason": "The truncate function returns a string longer than max_len when it appends '...'.",
+          "confidence": 5,
+          "failing_input": "truncate(\"hello world\", 5)",
+          "expected": "\"he...\"",
+          "actual": "\"hello...\"",
+          "rejected_because": "מעבר לתקרת החשדות",
+          "rejected_at": "cap"
+        },
+        {
+          "file": "text_tools.py",
+          "line": 10,
+          "bug_type": "none_handling",
+          "reason": "The word_count function raises an AttributeError if text is None.",
+          "confidence": 5,
+          "failing_input": "word_count(None)",
+          "expected": "0",
+          "actual": "raises AttributeError: 'NoneType' object has no attribute 'split'",
+          "rejected_because": "מעבר לתקרת החשדות",
+          "rejected_at": "cap"
+        },
+        {
+          "file": "ratings.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "The function does not handle the case where the input list is None or a book dictionary is missing the 'rating' key.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "ratings.py",
+          "line": 14,
+          "bug_type": "none_handling",
+          "reason": "The function does not handle the case where the input list is None or a book dictionary is missing the 'rating' key.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        }
+      ],
+      "screening": [
+        {
+          "file": "loans.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/test_loans.py::test_late_fee_capped",
+            "tests/test_loans.py::test_late_fee_small"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "members.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/test_members.py::test_normalize_email_missing"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "ratings.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/test_ratings.py::test_stars_label"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "text_tools.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/test_text_tools.py::test_truncate_respects_max_len",
+            "tests/test_text_tools.py::test_word_count_missing"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "ratings.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "text_tools.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "ratings.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "loans.py",
+          "line": 23,
+          "bug_type": "logic",
+          "reason": "The logic uses max instead of min, causing the fee to always be at least max_fee instead of capped at max_fee.",
+          "confidence": 5,
+          "failing_input": "late_fee(due=date(2023, 1, 1), today=date(2023, 1, 2))",
+          "expected": "1.5",
+          "actual": "30.0",
+          "evidence": "tests_confirmed"
+        },
+        {
+          "file": "members.py",
+          "line": 3,
+          "bug_type": "none_handling",
+          "reason": "The code calls .strip() on the result of member.get('email') without checking if it is None, causing an AttributeError if the email key is missing or None.",
+          "confidence": 5,
+          "failing_input": "normalize_email({})",
+          "expected": "None",
+          "actual": "AttributeError: 'NoneType' object has no attribute 'strip'",
+          "evidence": "tests_confirmed"
+        },
+        {
+          "file": "ratings.py",
+          "line": 3,
+          "bug_type": "logic",
+          "reason": "The condition avg >= 3 is checked before avg >= 4.5, making it impossible to return 'excellent'.",
+          "confidence": 5,
+          "failing_input": "stars_label(4.8)",
+          "expected": "\"excellent\"",
+          "actual": "\"good\"",
+          "evidence": "tests_confirmed"
+        },
+        {
+          "file": "text_tools.py",
+          "line": 5,
+          "bug_type": "off_by_one",
+          "reason": "The truncate function returns a string longer than max_len when it appends '...'.",
+          "confidence": 5,
+          "failing_input": "truncate(\"hello world\", 5)",
+          "expected": "\"he...\"",
+          "actual": "\"hello...\"",
+          "evidence": "tests_confirmed"
+        },
+        {
+          "file": "text_tools.py",
+          "line": 10,
+          "bug_type": "none_handling",
+          "reason": "The word_count function raises an AttributeError if text is None.",
+          "confidence": 5,
+          "failing_input": "word_count(None)",
+          "expected": "0",
+          "actual": "AttributeError: 'NoneType' object has no attribute 'split'",
+          "evidence": "tests_confirmed"
+        },
+        {
+          "file": "text_tools.py",
+          "line": 5,
+          "bug_type": "logic",
+          "reason": "The truncate function does not handle cases where max_len is less than 3, causing an invalid slice index.",
+          "confidence": 4,
+          "failing_input": "truncate(\"hello\", 2)",
+          "expected": "\"..\"",
+          "actual": "\"hell...\"",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "loans.py",
+          "start_line": 23,
+          "end_line": 23,
+          "new_code": "    return min(days_late(due, today) * daily_rate, max_fee)",
+          "explanation": "Changed max to min to correctly cap the late fee at max_fee."
+        },
+        {
+          "file": "members.py",
+          "start_line": 3,
+          "end_line": 3,
+          "new_code": "    email = member.get(\"email\")\n    return email.strip().lower() if email else None",
+          "explanation": "Added a check to ensure the email exists before calling strip and lower methods."
+        },
+        {
+          "file": "ratings.py",
+          "start_line": 3,
+          "end_line": 6,
+          "new_code": "    if avg >= 4.5:\n        return \"excellent\"\n    elif avg >= 3:\n        return \"good\"",
+          "explanation": "Reordered the conditional checks so that 'excellent' is evaluated before 'good'."
+        },
+        {
+          "file": "text_tools.py",
+          "start_line": 5,
+          "end_line": 5,
+          "new_code": "    return text[:max_len - 3] + \"...\"",
+          "explanation": "Adjust the truncation length to account for the three dots."
+        },
+        {
+          "file": "text_tools.py",
+          "start_line": 10,
+          "end_line": 10,
+          "new_code": "    return len(text.split()) if text else 0",
+          "explanation": "Handle None input in word_count by returning 0."
+        },
+        {
+          "file": "text_tools.py",
+          "start_line": 5,
+          "end_line": 5,
+          "new_code": "    return text[:max(0, max_len - 3)] + \"...\"[:max_len]",
+          "explanation": "Adjust the slice and ellipsis length to handle cases where max_len is less than 3."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/test_loans.py::test_not_overdue_on_due_date"
+      ],
+      "failed_after": [
+        "tests/test_loans.py::test_not_overdue_on_due_date"
+      ],
+      "new_failures": [],
+      "skipped": {
+        "tests/test_loans.py": "קובץ טסט (אסור לשנות)",
+        "tests/test_members.py": "קובץ טסט (אסור לשנות)",
+        "tests/test_ratings.py": "קובץ טסט (אסור לשנות)",
+        "tests/test_text_tools.py": "קובץ טסט (אסור לשנות)"
+      },
+      "result": "הסתיימו 3 סבבים, ואושרו 6 תיקונים. התיקונים לא נדחפו (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 64.5,
+      "llm_calls": 29,
+      "input_tokens": 7942,
+      "output_tokens": 8117
+    }
+  },
+  {
+    "id": "order_reports",
+    "metrics": {
+      "bugs": 4,
+      "raw_suspects": 4,
+      "raw_recall": 1.0,
+      "raw_precision": 1.0,
+      "suspects": 3,
+      "recall": 0.75,
+      "precision": 1.0,
+      "recall_exact": 0.75,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "or1",
+        "or3",
+        "or4"
+      ],
+      "fixed": null,
+      "fix_rate": null,
+      "lost_at": {
+        "or1": "kept_no_tests",
+        "or2": "cap",
+        "or3": "kept_no_tests",
+        "or4": "kept_no_tests"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "customers.py",
+          "line": 6,
+          "bug_type": "logic",
+          "reason": "The condition uses 'or' instead of 'and' to filter customers, failing the requirement to meet both criteria.",
+          "confidence": 5
+        },
+        {
+          "file": "customers.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "The code accesses 'city' on 'address' without checking if 'address' is None, which will raise a TypeError if the key is missing or None.",
+          "confidence": 5
+        },
+        {
+          "file": "orders.py",
+          "line": 5,
+          "bug_type": "none_handling",
+          "reason": "The discount_percent key might be missing, causing a TypeError when dividing None.",
+          "confidence": 5
+        },
+        {
+          "file": "orders.py",
+          "line": 10,
+          "bug_type": "off_by_one",
+          "reason": "The slicing logic is incorrect for getting the last n elements, as it includes an extra element due to the -1 offset.",
+          "confidence": 5
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "orders.py",
+          "line": 10,
+          "bug_type": "off_by_one",
+          "reason": "The slicing logic is incorrect for getting the last n elements, as it includes an extra element due to the -1 offset.",
+          "confidence": 5,
+          "failing_input": "last_orders([{\"id\": 1}, {\"id\": 2}, {\"id\": 3}], 2)",
+          "expected": "[{\"id\": 2}, {\"id\": 3}]",
+          "actual": "[{\"id\": 1}, {\"id\": 2}, {\"id\": 3}]",
+          "rejected_because": "מעבר לתקרת החשדות",
+          "rejected_at": "cap"
+        }
+      ],
+      "screening": [
+        {
+          "file": "customers.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "orders.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "customers.py",
+          "line": 6,
+          "bug_type": "logic",
+          "reason": "The condition uses 'or' instead of 'and' to filter customers, failing the requirement to meet both criteria.",
+          "confidence": 5,
+          "failing_input": "vip_customers([{\"name\": \"Alice\", \"orders\": 10, \"spent\": 100.0}])",
+          "expected": "[]",
+          "actual": "['Alice']",
+          "evidence": "unproven"
+        },
+        {
+          "file": "customers.py",
+          "line": 13,
+          "bug_type": "none_handling",
+          "reason": "The code accesses 'city' on 'address' without checking if 'address' is None, which will raise a TypeError if the key is missing or None.",
+          "confidence": 5,
+          "failing_input": "city_of({})",
+          "expected": "\"UNKNOWN\"",
+          "actual": "TypeError: 'NoneType' object is not subscriptable",
+          "evidence": "unproven"
+        },
+        {
+          "file": "orders.py",
+          "line": 5,
+          "bug_type": "none_handling",
+          "reason": "The discount_percent key might be missing, causing a TypeError when dividing None.",
+          "confidence": 5,
+          "failing_input": "order_total({\"lines\": [{\"price\": 10.0, \"qty\": 2}]})",
+          "expected": "20.0",
+          "actual": "TypeError: unsupported operand type(s) for /: 'NoneType' and 'int'",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "customers.py",
+          "start_line": 6,
+          "end_line": 6,
+          "new_code": "        if c[\"orders\"] >= min_orders and c[\"spent\"] >= min_spent",
+          "explanation": "Changed the logical operator from 'or' to 'and' to ensure both criteria are met."
+        },
+        {
+          "file": "customers.py",
+          "start_line": 13,
+          "end_line": 13,
+          "new_code": "    return address[\"city\"].upper() if address else \"UNKNOWN\"",
+          "explanation": "Added a check to handle cases where the address is None or missing."
+        },
+        {
+          "file": "orders.py",
+          "start_line": 4,
+          "end_line": 5,
+          "new_code": "    discount = order.get(\"discount_percent\", 0)\n    return subtotal * (1 - discount / 100)",
+          "explanation": "Default the discount_percent to 0 if the key is missing to avoid TypeError."
+        }
+      ],
+      "verification": "compile_only",
+      "verify_ok": true,
+      "failing_tests": [],
+      "failed_after": [],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 15.6,
+      "llm_calls": 9,
+      "input_tokens": 3028,
+      "output_tokens": 3010
+    }
+  }
+]

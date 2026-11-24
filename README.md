@@ -108,6 +108,19 @@ flowchart TD
 ![ניסוי before ב-LangSmith](docs/langsmith_before.png)
 ![ניסוי after-v13 ב-LangSmith](docs/langsmith_after_v13.png)
 
+## תוצאה סופית על סט שלא כויל
+
+ה-test שימש לפיתוח ולהשוואת before/after. ה-dev נשמר בצד עד הסוף: 10 באגים בשני ריפוזיטוריז, שאף מנגנון של שלב 6 לא כויל עליהם. זו התוצאה הסופית של המוצר כפי שהוא מוגש (v13, ‏`--rounds 3`, כמו בשימוש אמיתי).
+
+| ריפו | באגים | recall | precision | fix rate | איפה הבאגים נעצרו |
+|---|---|---|---|---|---|
+| `library_tracker` (עם טסטים) | 6 | 0.83 | 1.00 | **0.83** | 5 תוקנו, 1 לא נחשד |
+| `order_reports` (בלי טסטים) | 4 | 0.75 | 1.00 | (אין טסטים) | 3 נמצאו ונבדקו בקומפילציה, 1 נחתך בתקרה |
+| **ממוצע** | 10 | **0.79** | **1.00** | **0.83** | 0 חשדות שגויים |
+
+עלות: 38 קריאות למודל ו-22 אלף טוקנים לשני הריפוזיטוריז יחד. ב-`order_reports` אין טסטים, ולכן יש סבב אחד, ואחד הבאגים נחתך בתקרה של 3 תיקונים לסבב.
+הסתייגות: את ריפוזיטוריז ה-dev כתבנו לפרויקט, והם פשוטים יותר מ-BugsInPy. זה התחום שהמוצר מכוון אליו: קוד פייתון ברמת מורכבות פשוטה עד בינונית.
+
 ## Traces ותובנות
 
 הריצה על `library_tracker` ב-LangSmith. אחרי `verify_fix` בא `next_round`, ואחריו `find_suspects` שוב: זה הסבב השני. בקלט של `find_suspects` רואים שהשדות של הסבב הקודם (`decision`, `diff`) התאפסו, ו-`applied_diff` ו-`commit_sha` נשמרו:
@@ -174,7 +187,7 @@ python -m eval.run_eval --dataset test --name after-v13                    # ה�
 python -m eval.run_eval --dataset test --langsmith --name after-v13 `
        --from-results eval/results/after-v13_test_gemini-3.1-flash-lite.json  # העלאה ל-LangSmith בלי קריאות למודל
 
-python -m pytest tests -q --ignore=tests/test_docker_real.py              # 151 בדיקות, בלי רשת
+python -m pytest tests -q --ignore=tests/test_docker_real.py              # 152 בדיקות, בלי רשת
 ```
 
 | משתנה | תפקיד |
@@ -193,5 +206,5 @@ core/      graph · nodes · llm · filtering · code_context · repo_context
 eval/      datasets · metrics · run_eval · snapshot
 ui/        session (AgentSession) · flow (מפת הגרף)
 scripts/   run_cli · docker_check
-tests/     151 בדיקות עם מודל ו-Docker מדומים
+tests/     152 בדיקות עם מודל ו-Docker מדומים
 ```
