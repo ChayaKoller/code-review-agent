@@ -90,3 +90,12 @@ def test_timeout_is_retried(monkeypatch):
     r = make_reviewer()
     r._find = FlakyChain(_SuspectsOut(suspects=[]), failures=1, error="ReadTimeout: The read operation timed out")
     assert r.find_suspects("a.py", "x = 1\n") == []
+
+
+def test_disconnect_is_retried(monkeypatch):
+    """ניתוק רשת בלי תשובה (נטפרי / השרת סגר חיבור) נחשב זמני: מנסים שוב, וההרצה לא נעצרת."""
+    import core.llm as llm
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)
+    r = make_reviewer()
+    r._find = FlakyChain(_SuspectsOut(suspects=[]), failures=1, error="Server disconnected without sending a response.")
+    assert r.find_suspects("a.py", "x = 1\n") == []

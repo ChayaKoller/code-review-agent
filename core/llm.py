@@ -27,7 +27,9 @@ from core.state import Edit, Suspect
 
 # שגיאות זמניות של השרת: עומס (503) או מכסה לדקה (429). שווה לחכות ולנסות שוב
 # שגיאות זמניות שכדאי לנסות שוב. timeout / DEADLINE: הקריאה לא הסתיימה בזמן (LLM_TIMEOUT_SECONDS)
-_TEMPORARY = ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED", "overloaded", "504", "DEADLINE_EXCEEDED", "timed out", "Timeout")
+# ניתוק רשת: השרת (או הפרוקסי בדרך) סגר את החיבור בלי תשובה. הבקשה לא הגיעה לתשובה, ולכן בטוח לנסות שוב
+_TEMPORARY = ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED", "overloaded", "504", "DEADLINE_EXCEEDED", "timed out", "Timeout",
+              "Server disconnected", "Connection reset", "RemoteProtocolError")
 
 
 class LLMUnavailable(RuntimeError):

@@ -23,9 +23,10 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 בדיקה שהכול תקין:
 
 ```powershell
-python verify_bugs.py
+python -m pytest tests -q --ignore=tests/test_docker_real.py   # בלי רשת ובלי מפתחות
+python -m scripts.docker_check                                  # Docker מוכן ו-image הבסיס נבנה
 ```
 
-הפלט הצפוי: חמש שורות `OK` ו-`ALL GOOD`.
+הפלט הצפוי: כל הבדיקות עוברות (`passed`), ו-`docker_check` מסתיים בלי שגיאה.
 
 **חשוב:** הקובץ `.env` לא עולה ל-git (הוא ב-`.gitignore`). לא מדביקים מפתחות בצ'אט ולא בקוד.
