@@ -1,0 +1,144 @@
+[
+  {
+    "id": "thefuck_32",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 3,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 1,
+      "recall": 0.0,
+      "precision": 0.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0,
+      "lost_at": {
+        "thefuck_32": "not_suspected"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The use of \"\".join(split_cmd) concatenates the list elements without spaces, resulting in a malformed command like \"man 3 ls\" instead of \"man 3 ls\".",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 3,
+          "bug_type": "none_handling",
+          "reason": "Accessing command.stderr.lower() without checking if command.stderr is None can cause an AttributeError.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex in get_new_command does not account for flags like -v, causing the rule to match but fail to provide a corrected command for those cases.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex in get_new_command does not account for flags like -v, causing the rule to match but fail to provide a corrected command for those cases.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 3,
+          "bug_type": "none_handling",
+          "reason": "Accessing command.stderr.lower() without checking if command.stderr is None can cause an AttributeError.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/man.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "status": "broke_tests",
+          "fixed_tests": [],
+          "new_failures": [
+            "tests/rules/test_mkdir_p.py::test_get_new_command"
+          ],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The use of \"\".join(split_cmd) concatenates the list elements without spaces, resulting in a malformed command like \"man 3 ls\" instead of \"man 3 ls\".",
+          "confidence": 5,
+          "failing_input": "Command(script='man foo bar')",
+          "expected": "\"man 3 foo bar\"",
+          "actual": "\"man 3 foobar\"",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/man.py",
+          "start_line": 12,
+          "end_line": 13,
+          "new_code": "    split_cmd.insert(1, '3')\n    return \" \".join(split_cmd)",
+          "explanation": "Use space as a separator when joining the command list to ensure correct formatting."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "failed_after": [
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 204.8,
+      "llm_calls": 11,
+      "input_tokens": 3326,
+      "output_tokens": 72548
+    }
+  }
+]

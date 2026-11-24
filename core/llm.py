@@ -15,6 +15,7 @@ Reviewer היא מחלקה כדי שבבדיקות אפשר להחליף אות�
 """
 from __future__ import annotations
 
+import threading
 import time
 from typing import Literal
 
@@ -113,22 +114,29 @@ def number_lines(source: str) -> str:
 class Reviewer:
     """עוטף את המודל. נוצר פעם אחת ומשמש את כל הצמתים."""
 
+    # v12: כמה קריאות רצות במקביל (threads). += על מונה משותף אינו אטומי, ולכן מנעול
+    _lock = threading.Lock()
+
     def __init__(self, model_name: str | None = None):
         # ייבוא כאן ולא למעלה: בבדיקות עם מודל מדומה לא צריך את הספרייה ולא מפתח
         from langchain_google_genai import ChatGoogleGenerativeAI
 
-        def make(name: str):
+        def make(name: str, thinking: str | None = None):
+            extra = {"thinking_level": thinking} if thinking else {}
             return ChatGoogleGenerativeAI(
                 model=name,
                 temperature=config.LLM_TEMPERATURE,
                 max_retries=config.LLM_MAX_RETRIES,
                 timeout=config.LLM_TIMEOUT_SECONDS,
+                **extra,
             )
 
-        model = make(model_name or config.MODEL_NAME)
+        name = model_name or config.MODEL_NAME
+        model = make(name)
+        finder = make(name, config.FIND_THINKING_LEVEL)  # רמת חשיבה לחיפוש מ-config (ריק = ברירת המחדל של המודל)
         checker = make(config.CHECK_MODEL_NAME) if config.CHECK_MODEL_NAME else model
         # include_raw: מקבלים גם את התשובה הגולמית, כדי לספור טוקנים (עלות)
-        self._find = model.with_structured_output(_SuspectsOut, include_raw=True)
+        self._find = finder.with_structured_output(_SuspectsOut, include_raw=True)
         self._check = checker.with_structured_output(_VerdictOut, include_raw=True)
         self._fix = model.with_structured_output(_EditsOut, include_raw=True)
         self.calls = 0
@@ -151,10 +159,11 @@ class Reviewer:
                     ) from exc
                 time.sleep(delay)
                 delay *= 2
-        self.calls += 1
         usage = getattr(out.get("raw"), "usage_metadata", None) or {}
-        self.input_tokens += usage.get("input_tokens", 0)
-        self.output_tokens += usage.get("output_tokens", 0)
+        with self._lock:
+            self.calls += 1
+            self.input_tokens += usage.get("input_tokens", 0)
+            self.output_tokens += usage.get("output_tokens", 0)
         if out.get("parsing_error"):
             raise ValueError(f"המודל החזיר פלט שלא תואם למבנה: {out['parsing_error']}")
         return out.get("parsed")

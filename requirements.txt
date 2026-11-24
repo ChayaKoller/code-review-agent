@@ -3,3 +3,4 @@ langsmith
 langchain-google-genai
 python-dotenv
 pytest
+streamlit>=1.50

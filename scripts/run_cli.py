@@ -75,7 +75,8 @@ def write_report(values: dict, source: str, reviewer: Reviewer, error: str = "")
 
 
 def _ask_fix(info: dict) -> dict:
-    print(f"\n=== חשדות לבאגים (ניסיון {info['attempt']} מתוך {info['max_attempts']}) ===")
+    print(f"\n=== סבב {info.get('round', 1)} מתוך עד {info.get('max_rounds', 1)}: חשדות לבאגים "
+          f"(ניסיון {info['attempt']} מתוך {info['max_attempts']}) ===")
     for s in info["suspects"]:
         print(f"  {s['file']}:{s['line']} [{s['bug_type']}, {s.get('evidence', '-')}] {s['reason']}")
     for r in info.get("screening", []):

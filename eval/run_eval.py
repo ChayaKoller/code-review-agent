@@ -244,7 +244,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--langsmith", action="store_true", help="להריץ כניסוי ב-LangSmith")
     parser.add_argument("--resume", action="store_true", help="להמשיך הרצה שנעצרה (מדלג על מה שכבר בקובץ)")
     parser.add_argument("--dataset", choices=sorted(LANGSMITH_DATASETS), default="dev", help="dev או test")
+    parser.add_argument("--rounds", type=int, default=1,
+                        help="מספר סבבים מקסימלי (v13). ברירת מחדל 1: בכל פריט יש באג אחד, וכך ההשוואה ל-before הוגנת")
     args = parser.parse_args(argv)
+    config.MAX_ROUNDS = args.rounds
     ids = args.ids.split(",") if args.ids else (QUICK_IDS[args.dataset] if args.quick else None)
     items = load_dataset(args.only, args.dataset, ids)
     if args.langsmith:

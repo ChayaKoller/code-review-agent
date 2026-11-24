@@ -1,0 +1,584 @@
+[
+  {
+    "id": "thefuck_2",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 1.0,
+      "raw_precision": 0.2,
+      "suspects": 3,
+      "recall": 1.0,
+      "precision": 0.3333333333333333,
+      "recall_exact": 1.0,
+      "precision_exact": 0.3333333333333333,
+      "false_positives": 2,
+      "found": [
+        "thefuck_2"
+      ],
+      "fixed": [
+        "thefuck_2"
+      ],
+      "fix_rate": 1.0,
+      "lost_at": {
+        "thefuck_2": "fixed"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/argument_parser.py",
+          "line": 79,
+          "bug_type": "logic",
+          "reason": "The condition argv[0] != '--' is insufficient because if argv[0] is '--', the code falls through to the else block, potentially misinterpreting '--' as a command instead of a separator.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/conf.py",
+          "line": 93,
+          "bug_type": "none_handling",
+          "reason": "The _val_from_env method accesses os.environ[env] without checking if the key exists, which will raise a KeyError if the environment variable is missing, despite the caller checking 'if env in os.environ' in _settings_from_env.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 64,
+          "bug_type": "none_handling",
+          "reason": "Accessing os.environ['PATH'] without checking if it exists will raise a KeyError if the environment variable is missing.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 97,
+          "bug_type": "none_handling",
+          "reason": "The code assumes that if the try block fails, the list is empty, but it does not handle the case where the list might be empty or the index 0 does not exist, potentially causing an IndexError.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 121,
+          "bug_type": "logic",
+          "reason": "Accessing os.environ.get('PATH', '') and splitting by ':' is incorrect on Windows where the path separator is ';'.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/argument_parser.py",
+          "line": 79,
+          "bug_type": "logic",
+          "reason": "The condition argv[0] != '--' is insufficient because if argv[0] is '--', the code falls through to the else block, potentially misinterpreting '--' as a command instead of a separator.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/conf.py",
+          "line": 93,
+          "bug_type": "none_handling",
+          "reason": "The _val_from_env method accesses os.environ[env] without checking if the key exists, which will raise a KeyError if the environment variable is missing, despite the caller checking 'if env in os.environ' in _settings_from_env.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/utils.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+            "tests/entrypoints/test_not_configured.py::test_on_first_run",
+            "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+            "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+            "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+            "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+            "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+            "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+            "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+            "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+            "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+            "tests/test_conf.py::test_settings_defaults",
+            "tests/test_conf.py::test_settings_from_args",
+            "tests/test_utils.py::TestCache::test_when_etag_changed",
+            "tests/test_utils.py::TestCache::test_with_blank_cache",
+            "tests/test_utils.py::TestCache::test_with_filled_cache",
+            "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+            "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+            "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+            "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le",
+            "tests/test_utils.py::test_get_all_executables_pathsep[C:\\\\\\\\foo;C:\\\\\\\\bar;C:\\\\\\\\baz;C:\\\\\\\\foo\\\\\\\\bar-;]"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/argument_parser.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/conf.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/utils.py",
+          "line": 64,
+          "bug_type": "none_handling",
+          "reason": "Accessing os.environ['PATH'] without checking if it exists will raise a KeyError if the environment variable is missing.",
+          "confidence": 4,
+          "failing_input": "which('ls') with 'PATH' removed from os.environ (in Python 2 / environments where shutil.which is not available)",
+          "expected": "None",
+          "actual": "KeyError: 'PATH'",
+          "evidence": "tests_confirmed"
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 121,
+          "bug_type": "logic",
+          "reason": "Accessing os.environ.get('PATH', '') and splitting by ':' is incorrect on Windows where the path separator is ';'.",
+          "confidence": 4,
+          "failing_input": "get_all_executables()",
+          "expected": "Executables from directories in PATH (e.g., ['python.exe', 'cmd.exe'] on Windows when os.environ['PATH'] = 'C:\\\\Windows\\\\System32;C:\\\\Python39')",
+          "actual": "[] (on Windows, PATH uses ';' as separator and includes drive letters like 'C:', so splitting by ':' produces invalid path strings like ['C', '\\\\Windows\\\\System32;C', '\\\\Python39'] which fail in iterdir())",
+          "evidence": "tests_confirmed"
+        },
+        {
+          "file": "thefuck/utils.py",
+          "line": 97,
+          "bug_type": "none_handling",
+          "reason": "The code assumes that if the try block fails, the list is empty, but it does not handle the case where the list might be empty or the index 0 does not exist, potentially causing an IndexError.",
+          "confidence": 3,
+          "failing_input": "get_closest(\"test\", [])",
+          "expected": "None",
+          "actual": "IndexError: list index out of range",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/utils.py",
+          "start_line": 64,
+          "end_line": 64,
+          "new_code": "            for path in os.environ.get(\"PATH\", \"\").split(os.pathsep):",
+          "explanation": "Use os.environ.get with a default value and os.pathsep to safely handle missing PATH and cross-platform separators."
+        },
+        {
+          "file": "thefuck/utils.py",
+          "start_line": 97,
+          "end_line": 97,
+          "new_code": "            return possibilities[0] if possibilities else None",
+          "explanation": "Check if possibilities is not empty before accessing the first element to avoid IndexError."
+        },
+        {
+          "file": "thefuck/utils.py",
+          "start_line": 121,
+          "end_line": 121,
+          "new_code": "    bins = [exe.name.decode('utf8') if six.PY2 else exe.name\n            for path in os.environ.get('PATH', '').split(os.pathsep)\n            for exe in _safe(lambda: list(Path(path).iterdir()), [])",
+          "explanation": "Use os.pathsep instead of hardcoded ':' to correctly split PATH on Windows."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": false,
+      "failing_tests": [
+        "tests/entrypoints/test_not_configured.py::test_for_generic_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run",
+        "tests/entrypoints/test_not_configured.py::test_on_first_run_from_current_shell",
+        "tests/entrypoints/test_not_configured.py::test_on_run_after_other_commands",
+        "tests/entrypoints/test_not_configured.py::test_when_already_configured",
+        "tests/entrypoints/test_not_configured.py::test_when_cant_configure_automatically",
+        "tests/entrypoints/test_not_configured.py::test_when_successfully_configured",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::test_from_env_with_DEFAULT",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file",
+        "tests/test_conf.py::TestSettingsFromFile::test_from_file_with_DEFAULT",
+        "tests/test_conf.py::test_settings_defaults",
+        "tests/test_conf.py::test_settings_from_args",
+        "tests/test_utils.py::TestCache::test_when_etag_changed",
+        "tests/test_utils.py::TestCache::test_with_blank_cache",
+        "tests/test_utils.py::TestCache::test_with_filled_cache",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[cafe",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[diff",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[fuck-result2]",
+        "tests/test_utils.py::TestGetValidHistoryWithoutCurrent::test_get_valid_history_without_current[le",
+        "tests/test_utils.py::test_get_all_executables_pathsep[C:\\\\\\\\foo;C:\\\\\\\\bar;C:\\\\\\\\baz;C:\\\\\\\\foo\\\\\\\\bar-;]"
+      ],
+      "failed_after": [],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 126.1,
+      "llm_calls": 13,
+      "input_tokens": 14429,
+      "output_tokens": 7945
+    }
+  },
+  {
+    "id": "thefuck_12",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 4,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 1,
+      "recall": 0.0,
+      "precision": 0.0,
+      "recall_exact": 0.0,
+      "precision_exact": 0.0,
+      "false_positives": 1,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0,
+      "lost_at": {
+        "thefuck_12": "not_suspected"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 25,
+          "bug_type": "none_handling",
+          "reason": "The get_closest function is called with fallback_to_first=False, but it returns None if no match is found, which is not handled correctly when constructing new_cmds.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the file path does not contain a slash, rfind returns -1, causing the directory to be an empty string or incorrect slice, which is invalid for mkdir.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The _get_available_commands function fails to handle the case where the command listing might be empty or malformed, potentially returning an empty generator which causes get_closest to fail or return None.",
+          "confidence": 2
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script always contains a space, which will raise an IndexError if the command is just 'open' without arguments.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/npm_wrong_command.py",
+          "line": 22,
+          "bug_type": "none_handling",
+          "reason": "The _get_available_commands function fails to handle the case where the command listing might be empty or malformed, potentially returning an empty generator which causes get_closest to fail or return None.",
+          "confidence": 2,
+          "rejected_because": "ביטחון נמוך",
+          "rejected_at": "low_confidence"
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "line": 25,
+          "bug_type": "none_handling",
+          "reason": "The get_closest function is called with fallback_to_first=False, but it returns None if no match is found, which is not handled correctly when constructing new_cmds.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "line": 38,
+          "bug_type": "none_handling",
+          "reason": "The code assumes command.script always contains a space, which will raise an IndexError if the command is just 'open' without arguments.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/no_command.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/open.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 1
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "line": 27,
+          "bug_type": "logic",
+          "reason": "If the file path does not contain a slash, rfind returns -1, causing the directory to be an empty string or incorrect slice, which is invalid for mkdir.",
+          "confidence": 4,
+          "failing_input": "Command(script='cp file.txt foo', stderr=\"cannot create regular file 'foo': No such file or directory\")",
+          "expected": "If no directory separator exists in the file path, the code should handle the missing directory path appropriately (e.g., dir should be empty or '.' rather than truncating the filename).",
+          "actual": "'mkdir -p fo && cp file.txt foo'",
+          "evidence": "unproven"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 27,
+          "end_line": 27,
+          "new_code": "            dir = file[:file.rfind('/')] if '/' in file else ''",
+          "explanation": "Handle cases where the file path does not contain a directory separator to avoid incorrect slicing."
+        },
+        {
+          "file": "thefuck/rules/no_such_file.py",
+          "start_line": 29,
+          "end_line": 30,
+          "new_code": "            if dir:\n                return shell.and_('mkdir -p {}'.format(dir), command.script)\n            return command.script",
+          "explanation": "Only execute mkdir if a directory path was actually found."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "failed_after": [
+        "tests/rules/test_apt_get.py::test_get_new_command[command0-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command1-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command2-sudo",
+        "tests/rules/test_apt_get.py::test_get_new_command[command3-sudo",
+        "tests/rules/test_apt_get.py::test_match[command0-packages0]",
+        "tests/rules/test_apt_get.py::test_match[command1-packages1]",
+        "tests/rules/test_apt_get.py::test_not_match[command0-packages0-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command1-packages1-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command2-packages2-None]",
+        "tests/rules/test_apt_get.py::test_not_match[command3-packages3-/usr/bin/vim]",
+        "tests/rules/test_apt_get.py::test_not_match[command4-packages4-/usr/bin/vim]",
+        "tests/rules/test_no_command.py::test_match[fucck-fucck:",
+        "tests/rules/test_no_command.py::test_match[got",
+        "tests/rules/test_no_command.py::test_match[vom",
+        "tests/rules/test_no_command.py::test_not_match[qweqwe-qweqwe:",
+        "tests/rules/test_no_command.py::test_not_match[vim",
+        "tests/rules/test_no_command.py::test_not_match[vom",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env",
+        "tests/test_conf.py::TestSettingsFromEnv::()::test_from_env_with_DEFAULT",
+        "tests/test_types.py::TestCommand::()::test_from_script_calls"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 198.0,
+      "llm_calls": 11,
+      "input_tokens": 6416,
+      "output_tokens": 5028
+    }
+  },
+  {
+    "id": "thefuck_32",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 5,
+      "raw_recall": 0.0,
+      "raw_precision": 0.0,
+      "suspects": 0,
+      "recall": 0.0,
+      "precision": null,
+      "recall_exact": 0.0,
+      "precision_exact": null,
+      "false_positives": 0,
+      "found": [],
+      "fixed": [],
+      "fix_rate": 0.0,
+      "lost_at": {
+        "thefuck_32": "not_suspected"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The logic fails if the command is just 'ls' because it splits into a list of length 1, but replacing index 0 with 'ls -lah' results in 'ls -lah' which is correct, however, if the original command was 'ls -l', it splits into ['ls', '-l'], replacing index 0 results in 'ls -lah -l', which is likely not the intended behavior for a rule meant to fix 'ls' to 'ls -lah'.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of the digit, which incorrectly modifies commands like 'man 33' to 'man 22'.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 9,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of the digit, which incorrectly modifies commands like 'man 22' to 'man 33'.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The code assumes the command starts with 'man' and blindly slices the first 3 characters, which fails if the command is just 'man' or has different spacing.",
+          "confidence": 3
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex substitution does not handle cases where the command might be sudo mkdir, potentially resulting in incorrect command construction.",
+          "confidence": 3
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 9,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of the digit, which incorrectly modifies commands like 'man 22' to 'man 33'.",
+          "confidence": 5,
+          "rejected_because": "כפילות של חשד קרוב",
+          "rejected_at": "dedup"
+        },
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The logic fails if the command is just 'ls' because it splits into a list of length 1, but replacing index 0 with 'ls -lah' results in 'ls -lah' which is correct, however, if the original command was 'ls -l', it splits into ['ls', '-l'], replacing index 0 results in 'ls -lah -l', which is likely not the intended behavior for a rule meant to fix 'ls' to 'ls -lah'.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The code assumes the command starts with 'man' and blindly slices the first 3 characters, which fails if the command is just 'man' or has different spacing.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 13,
+          "bug_type": "logic",
+          "reason": "The regex substitution does not handle cases where the command might be sudo mkdir, potentially resulting in incorrect command construction.",
+          "confidence": 3,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of the digit, which incorrectly modifies commands like 'man 33' to 'man 22'.",
+          "confidence": 5,
+          "failing_input": "Command(script='man 3 python3')",
+          "expected": "'man 2 python3'",
+          "actual": "'man 2 python2'",
+          "rejected_at": "screening",
+          "rejected_because": "התיקון נפסל בבדיקה: broke_tests"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/man.py",
+          "status": "broke_tests",
+          "fixed_tests": [],
+          "new_failures": [
+            "tests/rules/test_man.py"
+          ],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        }
+      ],
+      "suspects": [],
+      "fixes": [],
+      "verification": null,
+      "verify_ok": null,
+      "failing_tests": [
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "failed_after": null,
+      "new_failures": null,
+      "skipped": {},
+      "result": "נמצאו חשדות, אבל אף תיקון לא עבר את הבדיקה (או שלא הוצע תיקון).",
+      "seconds": 99.4,
+      "llm_calls": 14,
+      "input_tokens": 5486,
+      "output_tokens": 9558
+    }
+  }
+]

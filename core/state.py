@@ -87,6 +87,16 @@ class ReviewState(TypedDict, total=False):
     failed_after: list[str]  # כל הטסטים שנכשלו אחרי התיקון (להערכה)
     push_decision: str  # PUSH / NO_PUSH
 
+    # --- סבבים (v13) ---
+    round: int  # מספר הסבב הנוכחי, מתחיל ב-1
+    rounds: list[dict]  # סיכום כל סבב שהסתיים: round, fixed_files, failing_before, failing_after
+    applied_fixes: list[Edit]  # כל התיקונים שאושרו ונכתבו להעתק, מכל הסבבים
+    applied_diff: str  # ה-diff המצטבר של כל הסבבים (מוצג ב-review_push)
+    prev_suspects: list[Suspect]  # חשדות של סבבים קודמים (להערכה ולדוח)
+    prev_raw_suspects: list[Suspect]
+    prev_rejected_suspects: list[Suspect]
+    prev_screening: list[dict]
+
     # --- תוצאה ---
     pushed: bool
     result: str  # סיכום סופי למשתמשת

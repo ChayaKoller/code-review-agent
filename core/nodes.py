@@ -15,6 +15,7 @@ prepare -> select -> find_suspects -> baseline -> propose_fix -> screen_fixes ->
 from __future__ import annotations
 
 import difflib
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -141,6 +142,16 @@ def _rejected(items: list[dict], why: str, stage: str) -> list[dict]:
     return [{**s, "rejected_because": why, "rejected_at": stage} for s in items]
 
 
+def parallel_map(fn, items: list) -> list:
+    """v12: מריץ fn על כל פריט במקביל, ומחזיר את התוצאות באותו סדר כמו items.
+    מתאים לקריאות למודל: כל קריאה עצמאית, ורוב הזמן הולך על המתנה לרשת.
+    חריגה בקריאה אחת נזרקת כאן, כמו בלולאה רגילה."""
+    if config.MAX_PARALLEL_CALLS <= 1 or len(items) <= 1:
+        return [fn(x) for x in items]
+    with ThreadPoolExecutor(max_workers=min(config.MAX_PARALLEL_CALLS, len(items))) as pool:
+        return list(pool.map(fn, items))
+
+
 def find_suspects(state: ReviewState, deps: Deps) -> dict:
     """1. קריאה אחת למודל לכל קובץ (כל הקובץ, עם ציון ביטחון).
     2. סינון בקוד: איחוד כפילויות, סף ביטחון, דירוג.
@@ -148,12 +159,12 @@ def find_suspects(state: ReviewState, deps: Deps) -> dict:
     4. תקרה של MAX_SUSPECTS.
     חשדות שהמאמת זרק (בביטחון מעל הסף) נשמרים גם ב-doubtful_suspects: אם יש טסטים, הם מקבלים
     הזדמנות ב-screen_fixes, ונשארים רק אם הטסטים מאשרים (s6try2: המאמת זרק את הבאג של thefuck_25)."""
-    raw = []
-    contexts = {}
-    for rel in state["files"]:
-        source = _read(state, rel)
-        contexts[rel] = build_context(state["sandbox_path"], rel, source)  # ממצא 1: הקשר מהריפו, בלי מודל
-        raw.extend(deps.reviewer.find_suspects(rel, source, contexts[rel]))
+    sources = {rel: _read(state, rel) for rel in state["files"]}
+    # ממצא 1: הקשר מהריפו, בלי מודל
+    contexts = {rel: build_context(state["sandbox_path"], rel, src) for rel, src in sources.items()}
+    # v12: הקבצים לא תלויים זה בזה, לכן הקריאות למודל נשלחות במקביל (ולא בזו אחר זו)
+    per_file = parallel_map(lambda rel: deps.reviewer.find_suspects(rel, sources[rel], contexts[rel]), state["files"])
+    raw = [s for found in per_file for s in found]
     unique = dedupe(raw)
     rejected = _rejected([s for s in raw if not any(s is u for u in unique)], "כפילות של חשד קרוב", "dedup")
     above, below = split_by_confidence(unique, config.SUSPECT_MIN_CONFIDENCE)
@@ -161,8 +172,10 @@ def find_suspects(state: ReviewState, deps: Deps) -> dict:
     ranked = rank(above)
     rejected += _rejected(ranked[config.MAX_SUSPECTS_TO_VERIFY :], "מעבר לתקרת האימות", "cap")
     verified, doubtful = [], []
-    for s in ranked[: config.MAX_SUSPECTS_TO_VERIFY]:
-        verdict = deps.reviewer.check_suspect(_read(state, s["file"]), s, contexts.get(s["file"], ""))
+    to_check = ranked[: config.MAX_SUSPECTS_TO_VERIFY]
+    # v12: גם המאמת במקביל. כל חשד נבדק לבד, והסדר נשמר (parallel_map מחזיר לפי הסדר)
+    verdicts = parallel_map(lambda s: deps.reviewer.check_suspect(sources[s["file"]], s, contexts[s["file"]]), to_check)
+    for s, verdict in zip(to_check, verdicts):
         checked = {**s, "failing_input": verdict["failing_input"], "expected": verdict["expected"],
                    "actual": verdict["actual"]}  # fmt: skip
         if verdict["is_bug"]:
@@ -369,6 +382,8 @@ def review_fix(state: ReviewState, deps: Deps) -> dict:
             "screening": state.get("screening", []),  # מה הטסטים אמרו על כל תיקון
             "attempt": state["attempts"],
             "max_attempts": config.MAX_REJECT_ATTEMPTS,
+            "round": state.get("round", 1),  # v13
+            "max_rounds": config.MAX_ROUNDS,
         }
     )
     decision = answer.get("decision")
@@ -389,7 +404,9 @@ def apply_fix(state: ReviewState, deps: Deps) -> dict:
         lines = [f"- {e['file']}:{e['start_line']} {e['explanation']}" for e in state["fixes"]]
         message = "Fix bugs found by code-review-agent\n\n" + "\n".join(lines)
         sha = git_ops.commit_files(Path(state["sandbox_path"]), changed, message)
-    return {"commit_sha": sha}
+    # v13: מצטברים. כל סבב שאושר מוסיף commit לאותו ענף, ו-review_push מציג את כולם יחד
+    return {"commit_sha": sha, "applied_fixes": state.get("applied_fixes", []) + state["fixes"],
+            "applied_diff": state.get("applied_diff", "") + state["diff"]}  # fmt: skip
 
 
 def verify_fix(state: ReviewState, deps: Deps) -> dict:
@@ -419,6 +436,43 @@ def verify_fix(state: ReviewState, deps: Deps) -> dict:
     }
 
 
+def next_round(state: ReviewState, deps: Deps) -> dict:
+    """v13: סוגר סבב ופותח את הבא, על הקוד המתוקן שכבר בהעתק.
+    הטסטים שנכשלו אחרי התיקון הם ה-baseline של הסבב הבא (בלי הרצה נוספת של הטסטים).
+    החשדות של הסבב שהסתיים עוברים לשדות prev_*, ושדות הסבב מתאפסים."""
+    summary = {
+        "round": state.get("round", 1),
+        "fixed_files": sorted({e["file"] for e in state.get("fixes", [])}),
+        "failing_before": len(state.get("failing_tests", [])),
+        "failing_after": len(state.get("failed_after", [])),
+    }
+    return {
+        "round": state.get("round", 1) + 1,
+        "rounds": state.get("rounds", []) + [summary],
+        "failing_tests": state.get("failed_after", []),
+        "prev_suspects": state.get("prev_suspects", []) + state.get("suspects", []),
+        "prev_raw_suspects": state.get("prev_raw_suspects", []) + state.get("raw_suspects", []),
+        "prev_rejected_suspects": state.get("prev_rejected_suspects", []) + state.get("rejected_suspects", []),
+        "prev_screening": state.get("prev_screening", []) + state.get("screening", []),
+        "suspects": [], "raw_suspects": [], "rejected_suspects": [], "doubtful_suspects": [], "doubtful_files": [],
+        "fixes": [], "diff": "", "screening": [], "decision": "", "rejection_note": "", "attempts": 0,
+    }  # fmt: skip
+
+
+def _merged(state: ReviewState) -> dict:
+    """v13: בסוף הריצה, השדות שהדוח וההערכה קוראים מאחדים את כל הסבבים."""
+    if state.get("round", 1) == 1:
+        return {}
+    return {
+        "suspects": state.get("prev_suspects", []) + state.get("suspects", []),
+        "raw_suspects": state.get("prev_raw_suspects", []) + state.get("raw_suspects", []),
+        "rejected_suspects": state.get("prev_rejected_suspects", []) + state.get("rejected_suspects", []),
+        "screening": state.get("prev_screening", []) + state.get("screening", []),
+        "fixes": state.get("applied_fixes", []),
+        "diff": state.get("applied_diff", ""),
+    }
+
+
 def review_push(state: ReviewState, deps: Deps) -> dict:
     """אישור שני: אחרי שרואים את תוצאת הבדיקה. התשובה: {"decision": "push" | "no_push"}"""
     answer = interrupt(
@@ -428,7 +482,9 @@ def review_push(state: ReviewState, deps: Deps) -> dict:
             "verification": state["verification"],
             "verify_ok": state["verify_ok"],
             "summary": state["verify_summary"],
-            "diff": state["diff"],
+            "diff": state.get("applied_diff") or state["diff"],  # v13: כל התיקונים מכל הסבבים
+            "round": state.get("round", 1),
+            "rounds": state.get("rounds", []),
         }
     )
     decision = answer.get("decision")
@@ -449,8 +505,17 @@ def finish(state: ReviewState, deps: Deps) -> dict:
     """תמיד הצומת האחרון: מוחק את ההעתק ומסכם."""
     if state.get("work_dir"):
         remove_sandbox(state["work_dir"])
+    merged = _merged(state)
     if state.get("result"):
-        return {}
+        return merged
+    if merged:  # v13: יותר מסבב אחד
+        n = len(state.get("rounds", [])) + 1
+        result = f"הסתיימו {n} סבבים, ואושרו {len(merged['fixes'])} תיקונים."
+        if state.get("push_decision") == NO_PUSH:
+            result += " התיקונים לא נדחפו (לפי ההחלטה שלך). ה-diff בתוצאה."
+        elif not state.get("is_git_repo"):
+            result += " אין .git, ולכן אין דחיפה: ה-diff בתוצאה."
+        return {**merged, "result": result}
     if not state.get("suspects") and state.get("rejected_suspects") and not state.get("screening"):
         result = f"המודל העלה {len(state['rejected_suspects'])} חשדות, וכולם נזרקו בסינון. לא נמצאו באגים."
     elif not state.get("suspects") and not state.get("screening"):

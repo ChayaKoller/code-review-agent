@@ -1,0 +1,203 @@
+[
+  {
+    "id": "thefuck_32",
+    "metrics": {
+      "bugs": 1,
+      "raw_suspects": 6,
+      "raw_recall": 1.0,
+      "raw_precision": 0.16666666666666666,
+      "suspects": 1,
+      "recall": 1.0,
+      "precision": 1.0,
+      "recall_exact": 1.0,
+      "precision_exact": 1.0,
+      "false_positives": 0,
+      "found": [
+        "thefuck_32"
+      ],
+      "fixed": [
+        "thefuck_32"
+      ],
+      "fix_rate": 1.0,
+      "lost_at": {
+        "thefuck_32": "fixed"
+      }
+    },
+    "result": {
+      "raw_suspects": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 2,
+          "bug_type": "logic",
+          "reason": "The match function is too broad and incorrectly triggers for commands that contain 'ls' but do not start with it, such as 'my_ls'.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of '3' or '2', which is incorrect for commands like 'man 33 printf'.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 9,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of '3' or '2', which is incorrect for commands like 'man 22 printf'.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 12,
+          "bug_type": "logic",
+          "reason": "The command reconstruction logic incorrectly inserts '3' at index 1 for commands with flags, such as 'man -k printf'.",
+          "confidence": 5
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 2,
+          "bug_type": "logic",
+          "reason": "The match function is too broad and will incorrectly suggest 'man ager' when the user types 'manager'.",
+          "confidence": 4
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The match function is too broad because it uses 'in' instead of checking if the command starts with 'mkdir', leading to false positives for commands like 'ls mkdir'.",
+          "confidence": 4
+        }
+      ],
+      "rejected_suspects": [
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 9,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of '3' or '2', which is incorrect for commands like 'man 22 printf'.",
+          "confidence": 4,
+          "rejected_because": "כפילות של חשד קרוב",
+          "rejected_at": "dedup"
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "line": 2,
+          "bug_type": "logic",
+          "reason": "The match function is too broad and will incorrectly suggest 'man ager' when the user types 'manager'.",
+          "confidence": 4,
+          "failing_input": "",
+          "expected": "",
+          "actual": "",
+          "rejected_because": "המאמת לא מצא קלט שמפיל את הקוד",
+          "rejected_at": "checker"
+        },
+        {
+          "file": "thefuck/rules/mkdir_p.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The match function is too broad because it uses 'in' instead of checking if the command starts with 'mkdir', leading to false positives for commands like 'ls mkdir'.",
+          "confidence": 4,
+          "failing_input": "Command('cat mkdir', 'cat: mkdir: No such file or directory')",
+          "expected": "False",
+          "actual": "True",
+          "rejected_because": "מעבר לתקרת החשדות",
+          "rejected_at": "cap"
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 12,
+          "bug_type": "logic",
+          "reason": "The command reconstruction logic incorrectly inserts '3' at index 1 for commands with flags, such as 'man -k printf'.",
+          "confidence": 5,
+          "failing_input": "Command(script='man -a write', output='')",
+          "expected": "\"man 3 -a write\"",
+          "actual": "\"man 3 -awrite\"",
+          "rejected_at": "screening",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "line": 7,
+          "bug_type": "logic",
+          "reason": "The replace method replaces all occurrences of '3' or '2', which is incorrect for commands like 'man 33 printf'.",
+          "confidence": 4,
+          "failing_input": "Command(script='man sqlite3', output='')",
+          "expected": "'man 3 sqlite3'",
+          "actual": "'man sqlite2'",
+          "rejected_at": "screening",
+          "rejected_because": "תיקון אחר אושר בטסטים, וזה לא"
+        }
+      ],
+      "screening": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "status": "tests_confirmed",
+          "fixed_tests": [
+            "tests/rules/test_ls_lah.py::test_match"
+          ],
+          "new_failures": [],
+          "attempts": 1
+        },
+        {
+          "file": "thefuck/rules/man.py",
+          "status": "unproven",
+          "fixed_tests": [],
+          "new_failures": [],
+          "attempts": 2
+        },
+        {
+          "file": "thefuck/rules/man_no_space.py",
+          "status": "broke_tests",
+          "fixed_tests": [],
+          "new_failures": [
+            "tests/rules/test_man_no_space.py::test_match"
+          ],
+          "attempts": 2
+        }
+      ],
+      "suspects": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "line": 2,
+          "bug_type": "logic",
+          "reason": "The match function is too broad and incorrectly triggers for commands that contain 'ls' but do not start with it, such as 'my_ls'.",
+          "confidence": 5,
+          "failing_input": "match(Command(script='rails', output=''), {})",
+          "expected": "False",
+          "actual": "True",
+          "evidence": "tests_confirmed"
+        }
+      ],
+      "fixes": [
+        {
+          "file": "thefuck/rules/ls_lah.py",
+          "start_line": 2,
+          "end_line": 2,
+          "new_code": "    return command.script.split(' ')[0] == 'ls' and not ('ls -' in command.script)",
+          "explanation": "Ensure the command starts with 'ls' to avoid false positives for commands containing 'ls'."
+        }
+      ],
+      "verification": "tests",
+      "verify_ok": true,
+      "failing_tests": [
+        "tests/rules/test_ls_lah.py::test_match",
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "failed_after": [
+        "tests/test_main.py::TestGetCommand::()::test_get_command_calls",
+        "tests/test_main.py::TestRunRule::()::test_run_rule",
+        "tests/test_main.py::TestRunRule::()::test_run_rule_with_side_effect",
+        "tests/test_main.py::TestRunRule::()::test_when_not_comfirmed"
+      ],
+      "new_failures": [],
+      "skipped": {},
+      "result": "התיקון לא נדחף (לפי ההחלטה שלך). ה-diff בתוצאה.",
+      "seconds": 227.6,
+      "llm_calls": 14,
+      "input_tokens": 4930,
+      "output_tokens": 264971
+    }
+  }
+]
