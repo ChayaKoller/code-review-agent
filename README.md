@@ -104,8 +104,6 @@ model: find  →  code: merge + confidence ≥ 3  →  second model: failing inp
 10. **הלוגיקה מופרדת מהממשק.** אותו גרף רץ מהטרמינל, מההערכה ומ-Streamlit.
     החלופה שנדחתה: לוגיקה בתוך קובץ הממשק.
 
-יומן ההחלטות המלא: [DECISIONS.md](DECISIONS.md).
-
 ## הערכה: לפני ואחרי
 
 **הנתונים:** 9 באגים אמיתיים מ-BugsInPy, מהפרויקטים thefuck, ‏httpie ו-PySnooper. על כל באג בדקנו שהטסט נכשל בקוד הבאגי ועובר אחרי התיקון המקורי.
